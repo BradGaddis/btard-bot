@@ -1,4 +1,5 @@
 import requests
+from dotenv import load_dotenv
 
 # get csv of all stocks in nyse
 # get name of all crypto assets traded on alpaca
