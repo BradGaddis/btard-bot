@@ -6,16 +6,19 @@ from dotenv import load_dotenv
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
+load_dotenv()
 
 END_POINT = 'https://paper-api.alpaca.markets'
 
 ACCOUNT_URL = END_POINT +  '/v2/account'
 
-print(ACCOUNT_URL)
+key = os.getenv('ALPACA_KEY')
+s_key = os.getenv('ALPACA_SECRET_KEY')
 
-r = requests.get(ACCOUNT_URL, headers={f"APCA-API-KEY-ID": load_dotenv('ALPACA_KEY'), "APCA-API-SECRET-KEY": load_dotenv('ALPACA_SECRET_KEY')})
 
-# print(r.content)
+r = requests.get(ACCOUNT_URL, headers={f"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": s_key})
+
+print(r.content)
 
 # trading_client = TradingClient(load_dotenv('ALPACA_KEY'), load_dotenv('ALPACA_SECRET_KEY'))
 
