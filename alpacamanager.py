@@ -1,3 +1,4 @@
+from curses import keyname
 from turtle import end_fill
 import requests
 import os
@@ -8,13 +9,15 @@ from alpaca.trading.enums import OrderSide, TimeInForce
 
 END_POINT = 'https://paper-api.alpaca.markets'
 
-ACCOUNTURL = END_POINT +  '/v2/account'
+ACCOUNT_URL = END_POINT +  '/v2/account'
 
-print(ACCOUNTURL)
+print(ACCOUNT_URL)
 
-r = requests.get(ACCOUNTURL, headers={f"APCA-API-KEY-ID: {load_dotenv('ALPACA_KEY')}", f"APCA-API-SECRET-KEY: {load_dotenv('ALPACA_SECRET_KEY')}"})
+r = requests.get(ACCOUNT_URL, headers={f"APCA-API-KEY-ID": load_dotenv('ALPACA_KEY'), "APCA-API-SECRET-KEY": load_dotenv('ALPACA_SECRET_KEY')})
 
-trading_client = TradingClient(load_dotenv('ALPACA_KEY'), load_dotenv('ALPACA_SECRET_KEY'))
+# print(r.content)
+
+# trading_client = TradingClient(load_dotenv('ALPACA_KEY'), load_dotenv('ALPACA_SECRET_KEY'))
 
 # filter = ListAccountsRequest(
 #                     created_after=datetime.datetime.strptime("2022-01-30", "%Y-%m-%d"),
