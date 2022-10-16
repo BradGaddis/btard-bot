@@ -1,4 +1,4 @@
-import asset.webscraper
+import webscraper
 from stockinfo import *
 
 def get_assets(assets = ["msft"]):
