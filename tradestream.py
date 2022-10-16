@@ -3,7 +3,7 @@ from config import *
 
 # this module handles information about trades and stuff we make?
 
-trading_stream = TradingStream(ALPACA_KEY, ALPACA_SECRET_KEY, paper=True)
+trading_stream = TradingStream(ALPACA_PAPER_KEY, ALPACA_PAPER_SECRET_KEY, paper=True)
 
 output_data = {}
 
