@@ -16,29 +16,29 @@ key = os.getenv('ALPACA_KEY')
 s_key = os.getenv('ALPACA_SECRET_KEY')
 
 
-r = requests.get(ACCOUNT_URL, headers={f"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": s_key})
+# r = requests.get(ACCOUNT_URL, headers={f"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": s_key})
 
 print(r.content)
 
-# trading_client = TradingClient(load_dotenv('ALPACA_KEY'), load_dotenv('ALPACA_SECRET_KEY'))
+trading_client = TradingClient(key, s_key)
 
 # filter = ListAccountsRequest(
 #                     created_after=datetime.datetime.strptime("2022-01-30", "%Y-%m-%d"),
 #                     entities=[AccountEntities.CONTACT, AccountEntities.IDENTITY]
 #                     )
 
-# # preparing order data
-# market_order_data = MarketOrderRequest(
-#                       symbol="BTC/USD",
-#                       qty=0.0001,
-#                       side=OrderSide.BUY,
-#                       time_in_force=TimeInForce.DAY
-#                   )
+# preparing order data
+market_order_data = MarketOrderRequest(
+                      symbol="BTC/USD",
+                      qty=0.0001,
+                      side=OrderSide.BUY,
+                      time_in_force=TimeInForce.IOC
+                  )
 
-# # Market order
-# market_order = trading_client.submit_order(
-#                 order_data=market_order_data
-#                 )
+# Market order
+market_order = trading_client.submit_order(
+                order_data=market_order_data
+                )
 
 # def connect(platform = "some platform"):
 #     print(f"connecting {platform}")

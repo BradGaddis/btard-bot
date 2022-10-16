@@ -1,13 +1,22 @@
 import webscraper
+from stockinfo import *
 
-def get_assets(assets = []):
-    print(f"retreiving assets {assets}")
-    webscraper.scrape()
-    # somehow save them to a csv or list?
-    return assets
+class Asset_Picker():
+    def get_assets(assets = ["msft"]):
+        
+        print(f"retreiving assets {assets}")
+        
+        # TODO
+            # detemerine what constitues a stock worth buying
+                # the balance sheet must reflect that debt is equal to or less than capital
+                # market cap?
+
+        # webscraper.scrape() # somehow save them to a csv or list?
+        return assets
+
+    def check_balance_sheet(asset): 
+        for i in range(len(asset)):
+            check_stock(asset[0])
 
 
-def check_balance_sheet(asset = [ass for ass in range(10)]): # yes, I thought this was funny. I'm childish
-    for i in range(len(asset)):
-        print(f"checking some value at {i}")
-    print("checking balance sheet of some asset...")
+    # check_balance_sheet("msft")
