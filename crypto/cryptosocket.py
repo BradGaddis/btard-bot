@@ -2,6 +2,10 @@ from config import *
 # from alpaca.data import CryptoDataStream, StockDataStream
 from alpaca.data.live import CryptoDataStream
 
+# TODO 
+    # we some how have to get a list of cyptos that we can even play with
+
+
 wss_client  = CryptoDataStream(ALPACA_KEY, ALPACA_SECRET_KEY)
 
 # async handler

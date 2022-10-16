@@ -1,6 +1,6 @@
 import requests
 from dotenv import load_dotenv
-import assetpicker as ap
+import asset.assetpicker as ap
 import os
 
 # get csv of all stocks in nyse
