@@ -3,3 +3,4 @@ requests
 alpaca-trade-api
 pandas
 yfinance
+backtrader
