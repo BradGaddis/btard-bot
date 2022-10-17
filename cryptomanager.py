@@ -1,4 +1,3 @@
-from ast import literal_eval
 import requests 
 from config import *
 import json
@@ -18,7 +17,8 @@ def get_tradable():
     # print(type(my_json))
     for crypto in data:
         # print(crypto["symbol"])
-        output.append(crypto["symbol"])
+        if crypto["tradable"]:
+            output.append(crypto["symbol"])
     return output
         
-print(get_tradable())
+# print(get_tradable())
