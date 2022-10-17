@@ -1,5 +1,6 @@
 BeautifulSoup4
 requests
-alpaca-trade-api
+alpaca_trade_api
 pandas
 yfinance
+alpaca-py
