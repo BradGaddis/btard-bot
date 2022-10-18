@@ -1,6 +1,6 @@
 import yfinance as yf
 
-def check_stock(stock):
+def check_stock(stock="msft"):
 
     check_stock = yf.Ticker(stock)
 
