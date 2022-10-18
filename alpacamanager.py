@@ -2,11 +2,9 @@ from curses import keyname
 from turtle import end_fill
 import requests
 import os
-from dotenv import load_dotenv
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
-load_dotenv()
 
 END_POINT = 'https://paper-api.alpaca.markets'
 
@@ -18,7 +16,7 @@ s_key = os.getenv('ALPACA_SECRET_KEY')
 
 # r = requests.get(ACCOUNT_URL, headers={f"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": s_key})
 
-print(r.content)
+# print(r.content)
 
 trading_client = TradingClient(key, s_key)
 

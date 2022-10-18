@@ -1,11 +1,23 @@
 import yfinance as yf
+import pandas as pd
+
 
 def check_stock(stock="msft"):
+    info = yf.Ticker(stock).info
+    # print(yf.Ticker(stock).info)
+    keys = [str(key) for key in info]
+    values = [info[key] for key in keys]
+    print(len(keys), len(values))
+    # print(pd.DataFrame(values, columns=keys))
+    return info
+    
 
-    check_stock = yf.Ticker(stock)
 
-    # get stock info
-    print(check_stock.info)
+
+check_stock()
+
+
+    
 
 # get historical market data
 # hist = msft.history(period="max")

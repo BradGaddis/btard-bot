@@ -4,3 +4,4 @@ alpaca_trade_api
 pandas
 yfinance
 alpaca-py
+pandas_datareader
