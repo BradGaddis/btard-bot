@@ -1,10 +1,11 @@
-from dotenv import load_dotenv
 import assetpicker as ap
+from config import *
 import os
+
+from stocktrader import stock_trader
 
 # get csv of all stocks in nyse
 # get name of all crypto assets traded on alpaca
-load_dotenv()
 
 
 def run():
@@ -12,7 +13,8 @@ def run():
     ap.check_balance_sheet()
 
 if __name__ == '__main__':
-    run()
+    stock_trader = stock_trader(ALPACA_PAPER_KEY, ALPACA_PAPER_SECRET_KEY)
+    stock_trader.run()
 
 # train the trades on a reinforcement model
 
