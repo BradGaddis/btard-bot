@@ -88,7 +88,7 @@ def print_interesting_stocks(market_cap = None):
     # print(stocks_list[0][1])
     # check stocks that have a positive cash to debt ratio
     with open("stocks_of_interest.csv", "w") as f:
-        fields= ["ticker", *get_metrics(), "cash to debt", "longBusinessSummary"]
+        fields= ["ticker", *get_metrics(), "cash to debt"]
         writer = csv.DictWriter(f, fieldnames=fields) 
         writer.writeheader()
     
@@ -111,7 +111,6 @@ def print_interesting_stocks(market_cap = None):
                             except:
                                 writer.writerow({str(metric): "None"})
                         writer.writerow({"cash to debt": str(cash_to_debt)})
-                        writer.writerow({"longBusinessSummary": str(info["longBusinessSummary"])})
 
 
                         print(stock, [(metric, info[metric]) for metric in get_metrics()],("cash to debt",cash_to_debt),"\n",info["longBusinessSummary"], "\n",stocks_of_interest,"\n", len(stocks_of_interest),"\n")
