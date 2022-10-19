@@ -37,7 +37,7 @@ class stock_trader():
 
     def get_financials(self):
         for stock in self.get_position_tickers():
-            print(stock, assetpicker.check_stock_financial(stock))
+            print(stock, assetpicker.check_stock_financial(stock), "\n_________________________")
 
     def run(self):
         cur_positions = self.get_position_tickers()
@@ -46,3 +46,6 @@ class stock_trader():
         time.sleep(3)
         print(f"Here are the financials for the stock that you own:")
         self.get_financials()
+        
+        print("Checkout these stocks:")
+        
