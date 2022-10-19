@@ -1,21 +1,31 @@
 import webscraper
 from stockinfo import *
+import requests
+import json
+from config import *
+import csv
 
-def get_assets(assets = ["msft"]):
+def get_tradable_stocks():
+    url = 'https://api.alpaca.markets/v2/assets?asset_class=us_equity'
     
-    print(f"retreiving assets {assets}")
-    
-    # TODO
-        # detemerine what constitues a stock worth buying
-            # the balance sheet must reflect that debt is equal to or less than capital
-            # market cap?
+    r = requests.get(url, headers={'Apca-Api-Key-Id': ALPACA_LIVE_KEY, 'Apca-Api-Secret-Key':ALPACA_LIVE_SECRET_KEY})
+    obj = r.content
+    output = []
+    data = json.loads(obj)
+    for stock in data:
+        if stock["tradable"]:
+            output.append(stock["symbol"])
+    with open("tradable_stocks.csv", "w") as f:
+        write = csv.writer(f).writerow(output)
+    print(len(output))
+    return output
+        
 
-    # webscraper.scrape() # somehow save them to a csv or list?
-    return assets
+
+def check_stock_financial(stock="msft"):
+    return yf.Ticker(stock).financials
 
 def check_balance_sheet(asset = "SPY"): 
     for i in range(len(asset)):
         check_stock(asset[0])
 
-
-    # check_balance_sheet("msft")

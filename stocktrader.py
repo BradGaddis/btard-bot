@@ -1,8 +1,10 @@
 from alpaca.trading.client import TradingClient
+import assetpicker
 from config import *
 import pandas as pd
 import asyncio as asy
 import yfinance as yf
+import time
 
 class stock_trader():
     def __init__(self, key = ALPACA_PAPER_KEY, skey = ALPACA_PAPER_SECRET_KEY) -> None:
@@ -33,5 +35,14 @@ class stock_trader():
     def get_position_tickers(self):
         return [asset.symbol for asset in self.positions]
 
+    def get_financials(self):
+        for stock in self.get_position_tickers():
+            print(stock, assetpicker.check_stock_financial(stock))
+
     def run(self):
-        pass
+        cur_positions = self.get_position_tickers()
+        # Show current held positions
+        print(f"You are currently holding: {cur_positions}")
+        time.sleep(3)
+        print(f"Here are the financials for the stock that you own:")
+        self.get_financials()
