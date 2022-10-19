@@ -21,6 +21,23 @@ def get_tradable_stocks():
     return output
         
 
+def check_metric_financial():
+    # total revenue should be increasing on average on avereage
+    # gross profit should be increasing every year on avereage
+    # income before tax should increase on average
+    # should be below 200 ma 
+    # check macd?
+    
+    pass
+
+metrics = []
+with open("yahooinfometrics.csv", "r") as f:
+    reader = csv.reader(f)
+    metrics = list(reader)
+
+for i in range(len(metrics[0])):
+    metrics[0][i] = metrics[0][i].strip()
+
 
 def check_stock_financial(stock="msft"):
     return yf.Ticker(stock).financials
