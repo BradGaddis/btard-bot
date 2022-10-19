@@ -26,8 +26,10 @@ def check_metric_financial():
     # gross profit should be increasing every year on avereage
     # income before tax should increase on average
     # should be below 200 ma 
+    # ratio of cash to debt should be positive
+    # check rsi
     # check macd?
-    
+
     pass
 
 metrics = []
