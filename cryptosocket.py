@@ -7,10 +7,8 @@ from alpaca.data.historical import CryptoHistoricalDataClient
 from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame
 
-from cryptomanager import get_tradable
-
 # returns all available crypto on Alpaca to trade against
-tradable_crypto = get_tradable()
+# tradable_crypto = get_tradable()
 
 _date = datetime.datetime.strptime("2022-10-01",'%Y-%m-%d')
 print(type(_date))
