@@ -1,9 +1,11 @@
+from inspect import cleandoc
 from stockinfo import *
 import requests
 import json
 from config import *
 import csv
 import yfinance as yf
+import time
 
 def get_metrics():
     """Returns a list of criteria to search by"""
@@ -71,8 +73,8 @@ def check_stock_info(stock):
     return yf.Ticker(stock).info
 
 
-def print_interesting_stocks(market_cap = None):
-    """Prints a datafram of stocks worth looking into by some arbitray metrics"""
+def print_interesting_longterm_stocks(market_cap = 3000000000):
+    """Prints a dataframe of stocks worth looking into by some arbitrary metrics. Market Cap < 3b by default"""
     stocks_list = []
     try:
         with open("tradable_stocks.csv", "r") as f:
@@ -91,18 +93,25 @@ def print_interesting_stocks(market_cap = None):
         fields= ["ticker", *get_metrics(), "cash to debt"]
         writer = csv.DictWriter(f, fieldnames=fields) 
         writer.writeheader()
-    
-        for stock in stocks_list[0]:
+
+        # print(check_stock_info(stocks_list[0][0]))
+        # print(check_stock_info(stocks_list[0][1]))
+
+        # return
+        for i, stock in enumerate(stocks_list[0]):
             cash_to_debt = ""
+            time.sleep(2)
+            clear = True
+            info
             try: 
-                cash_to_debt = check_stock_info(stock)["totalCash"] - check_stock_info(stock)["totalDebt"] 
+                info = check_stock_info(stock)
+                cash_to_debt = info["totalCash"] -info["totalDebt"] 
             except:
                 continue
             else:
                 try:
-                    if check_stock_info(stock)["country"] == "United States" and cash_to_debt > 0:
+                    if info["country"] == "United States" and cash_to_debt > 0 and info["dividendYield"] and info["marketCap"] <= market_cap and info["beta"] < 1:
                         stocks_of_interest.append(stock)
-                        info = check_stock_info(stock)
 
                         writer.writerow({"ticker": str(stock)})
                         for metric in get_metrics():
@@ -111,9 +120,15 @@ def print_interesting_stocks(market_cap = None):
                             except:
                                 writer.writerow({str(metric): "None"})
                         writer.writerow({"cash to debt": str(cash_to_debt)})
-
-
+                        
+                        clear = False
                         print(stock, [(metric, info[metric]) for metric in get_metrics()],("cash to debt",cash_to_debt),"\n",info["longBusinessSummary"], "\n",stocks_of_interest,"\n", len(stocks_of_interest),"\n")
+                    else: 
+                        if clear:
+                            print ("\033[A                             \033[A")
+                        print(f"checking stock {i} of {len(stocks_list[0])}")
+                        clear = True
+                        
                 except:
                     pass
 
@@ -122,4 +137,4 @@ def print_interesting_stocks(market_cap = None):
 
 
 
-print_interesting_stocks()
+print_interesting_longterm_stocks()
