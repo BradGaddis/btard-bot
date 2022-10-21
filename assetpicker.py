@@ -73,7 +73,7 @@ def check_stock_info(stock):
     return yf.Ticker(stock).info
 
 
-def print_interesting_longterm_stocks(market_cap = 3000000000):
+def print_interesting_longterm_stocks(market_cap = 3000000000, restart = False):
     """Prints a dataframe of stocks worth looking into by some arbitrary metrics. Market Cap < 3b by default"""
     stocks_list = []
     try:
@@ -82,44 +82,65 @@ def print_interesting_longterm_stocks(market_cap = 3000000000):
             for row in reader:
                 stocks_list.append(row)
     except:
-        stocks_list = get_tradable_stocks()
+        pass
+    #     stocks_list = get_tradable_stocks()
 
     stocks_of_interest = []
+    # import pandas as pd
+    # stocks_of_interest = pd.read_csv('stocks_of_interest.csv', header=None, index_col=0, squeeze=True).to_dict()
+
     
-    
-    # print(stocks_list[0][1])
     # check stocks that have a positive cash to debt ratio
+
+    try:
+        with open('stocks_of_interest.csv', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                stocks_of_interest.append(row["ticker"])
+    except:
+        print("no csv file... let's create one")
+     
+     
+    print("continuing csv dict. remove it and start over? y/n") # TODO
+
+    start_point = stocks_list[0].index(stocks_of_interest[-1])
+    stocks_list[0] = stocks_list[0][start_point :]
+
+    # return
+    write_interesting_csv(market_cap, stocks_list, f, stocks_of_interest)
+
+def write_interesting_csv(market_cap, stocks_list, f, stocks_of_interest, restart = False):
     with open("stocks_of_interest.csv", "w") as f:
         fields= ["ticker", *get_metrics(), "cash to debt"]
-        writer = csv.DictWriter(f, fieldnames=fields) 
-        writer.writeheader()
-
-        # print(check_stock_info(stocks_list[0][0]))
-        # print(check_stock_info(stocks_list[0][1]))
-
-        # return
+        writer = csv.DictWriter(f, fieldnames=fields, delimiter=',') 
+        if restart:
+            writer.writeheader()
         for i, stock in enumerate(stocks_list[0]):
             cash_to_debt = ""
-            time.sleep(2)
+            # time.sleep(.05)
             clear = True
-            info
+            info = check_stock_info(stock)
             try: 
-                info = check_stock_info(stock)
-                cash_to_debt = info["totalCash"] -info["totalDebt"] 
+                cash_to_debt = info["totalCash"] - info["totalDebt"] 
             except:
                 continue
             else:
                 try:
                     if info["country"] == "United States" and cash_to_debt > 0 and info["dividendYield"] and info["marketCap"] <= market_cap and info["beta"] < 1:
                         stocks_of_interest.append(stock)
-
-                        writer.writerow({"ticker": str(stock)})
+                        row = dict({"ticker": str(stock)})
+                        # writer.writerow({"ticker": str(stock)})
                         for metric in get_metrics():
                             try:
-                                writer.writerow({str(metric): str(info[metric])})
+                                row[str(metric)] = str(info[metric])
+                                # writer.writerow({str(metric): str(info[metric])})
                             except:
-                                writer.writerow({str(metric): "None"})
-                        writer.writerow({"cash to debt": str(cash_to_debt)})
+                                 row[str(metric)] = None
+                                # writer.writerow({str(metric): "None"})
+                        row["cash to debt"] = str(cash_to_debt)
+                        # print(row)
+                        # writer.writerow({"cash to debt": str(cash_to_debt)})
+                        writer.writerow(row)
                         
                         clear = False
                         print(stock, [(metric, info[metric]) for metric in get_metrics()],("cash to debt",cash_to_debt),"\n",info["longBusinessSummary"], "\n",stocks_of_interest,"\n", len(stocks_of_interest),"\n")

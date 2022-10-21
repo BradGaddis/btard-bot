@@ -1,4 +1,5 @@
 import datetime
+from urllib import request
 from config import *
 # from alpaca.data import CryptoDataStream, StockDataStream
 from alpaca.data.live import CryptoDataStream
@@ -6,6 +7,7 @@ from alpaca.data.requests import CryptoLatestQuoteRequest
 from alpaca.data.historical import CryptoHistoricalDataClient
 from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame
+import requests
 
 # returns all available crypto on Alpaca to trade against
 # tradable_crypto = get_tradable()
@@ -40,4 +42,6 @@ def get_historical_data(start = None, end = None, cryptos = ["BTC/USD"]):
 
     return bars
 
-print(get_historical_data())
+
+r = requests.get("wss://stream.data.alpaca.markets/v1beta2/crypto")
+print(r.content)

@@ -22,16 +22,13 @@ class stock_trader():
 
         trading_client = TradingClient(api_key=key,secret_key=skey)
         self.buying_power = trading_client.get_account().non_marginable_buying_power
-        self.play_month = self.buying_power * .01 if self.buying_power > 1 else 1
-
-        print(self.buying_power)
-
-        i = 0
-        for pos in self.positions:
+        self.gamblin_money = self.buying_power * .01 if self.buying_power > 1 else 1    
+        self.long_term_invest_amount = (self.buying_power - self.gamblin_money) * .9
+        
+        for i , pos in enumerate(self.positions):
             self.pos_values.append([])
             for tup in pos:
                 self.pos_values[i].append((tup[1]))
-            i += 1
 
         pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
         pos_df = pos_df.iloc[:,1:]
@@ -62,4 +59,4 @@ class stock_trader():
         # print(f"Here are the financials for the stock that you own:")
         # self.get_position_financials()
         # print("Checkout these stocks:")
-        
+1        
