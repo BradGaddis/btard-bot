@@ -1,4 +1,5 @@
 from inspect import cleandoc
+from logging import exception
 from stockinfo import *
 import requests
 import json
@@ -6,6 +7,8 @@ from config import *
 import csv
 import yfinance as yf
 import time
+import pandas as pd
+
 
 def get_metrics():
     """Returns a list of criteria to search by"""
@@ -81,8 +84,8 @@ def print_interesting_longterm_stocks(market_cap = 3000000000, restart = False):
             reader = csv.reader(f)
             for row in reader:
                 stocks_list.append(row)
-    except:
-        pass
+    except Exception:
+        print(Exception)
     #     stocks_list = get_tradable_stocks()
 
     stocks_of_interest = []
@@ -91,30 +94,51 @@ def print_interesting_longterm_stocks(market_cap = 3000000000, restart = False):
 
     
     # check stocks that have a positive cash to debt ratio
-
+    saved = []
+    saved_dict = {}
     try:
         with open('stocks_of_interest.csv', newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                print(row)
+                saved.append(row)
                 stocks_of_interest.append(row["ticker"])
-    except:
-        print("no csv file... let's create one")
-     
-     
-    print("continuing csv dict. remove it and start over? y/n") # TODO
+                print(row["ticker"])
 
-    start_point = stocks_list[0].index(stocks_of_interest[-1])
+    except Exception as e:
+        print(e)
+
+        # pass
+
+     
+    # print("continuing csv dict. remove it and start over? y/n") # TODO
+    
+    print(f"stocks of interest {stocks_of_interest}")
+
+    if len(stocks_of_interest) == 0:
+        start_point = 0 
+    else:
+        start_point = stocks_list[0].index(stocks_of_interest[-1])  + 1
+    
     stocks_list[0] = stocks_list[0][start_point :]
 
-    # return
-    write_interesting_csv(market_cap, stocks_list, f, stocks_of_interest)
+    print(f"start point: {start_point}")    
+    if start_point == 0:
+        restart = True
+    
+    if 
+    write_interesting_csv(market_cap, stocks_list, f, stocks_of_interest, saved, restart = restart)
 
-def write_interesting_csv(market_cap, stocks_list, f, stocks_of_interest, restart = False):
+def write_interesting_csv(market_cap, stocks_list, f, stocks_of_interest, saved = {}, restart = False ):
     with open("stocks_of_interest.csv", "w") as f:
-        fields= ["ticker", *get_metrics(), "cash to debt"]
+        fields= ["ticker", *get_metrics(), "cash to debt","complete"]
         writer = csv.DictWriter(f, fieldnames=fields, delimiter=',') 
-        if restart:
-            writer.writeheader()
+        writer.writeheader()
+        if not restart:
+            for row in saved:
+                writer.writerow(row)
+
+
         for i, stock in enumerate(stocks_list[0]):
             cash_to_debt = ""
             # time.sleep(.05)
@@ -143,15 +167,19 @@ def write_interesting_csv(market_cap, stocks_list, f, stocks_of_interest, restar
                         writer.writerow(row)
                         
                         clear = False
-                        print(stock, [(metric, info[metric]) for metric in get_metrics()],("cash to debt",cash_to_debt),"\n",info["longBusinessSummary"], "\n",stocks_of_interest,"\n", len(stocks_of_interest),"\n")
+                        show_interesting_stock(stocks_of_interest, stock, cash_to_debt, info)
                     else: 
                         if clear:
                             print ("\033[A                             \033[A")
                         print(f"checking stock {i} of {len(stocks_list[0])}")
                         clear = True
                         
-                except:
-                    pass
+                except Exception as e:
+                    print("error: ", e)
+        writer.writerow({"complete" : True})
+
+def show_interesting_stock(stocks_of_interest, stock, cash_to_debt, info):
+    print(stock, [(metric, info[metric]) for metric in get_metrics()],("cash to debt",cash_to_debt),"\n",info["longBusinessSummary"], "\n",stocks_of_interest,"\n", len(stocks_of_interest),"\n")
 
     # print(check_stock_info(stocks_list[0][1]))
     # check stocks that have revenue that is growing

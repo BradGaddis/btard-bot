@@ -1,3 +1,5 @@
+import csv
+from dataclasses import field
 from alpaca.trading.client import TradingClient
 import assetpicker
 from config import *
@@ -9,7 +11,7 @@ import concurrent.futures
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
-
+import os
 
 
 class stock_trader():
@@ -21,7 +23,7 @@ class stock_trader():
         self.pos_values = []    
 
         trading_client = TradingClient(api_key=key,secret_key=skey)
-        self.buying_power = trading_client.get_account().non_marginable_buying_power
+        self.buying_power = float(trading_client.get_account().non_marginable_buying_power)
         self.gamblin_money = self.buying_power * .01 if self.buying_power > 1 else 1    
         self.long_term_invest_amount = (self.buying_power - self.gamblin_money) * .9
         
@@ -46,11 +48,28 @@ class stock_trader():
     def get_position_tickers(self):
         return [asset.symbol for asset in self.positions]
 
-    def get_position_financials(self):
-        for stock in self.get_position_tickers():
-            print(stock, assetpicker.check_stock_financial(stock), "\n_________________________\n")
-            
+    # def get_position_financials(self):
+    #     for stock in self.get_position_tickers():
+    #         print(stock, assetpicker.check_stock_financial(stock), "\n_________________________\n")
 
+
+    def set_gambling_params(self, total_amount = 0):
+        #check if params already set
+        if os.path.exists('portfolio_params.csv'):
+            with open ("portfolio_params.csv", "r") as params_txt:
+                reader = csv.reader(params_txt)
+                for row in reader:
+                    print(row)
+        else :
+            # set the params
+            Crypto_gambling_amout = 0
+
+            params = ["Crypto_gambling_amout"]
+            with open ("portfolio_params.csv", "w") as params_txt:
+                writer = csv.DictWriter(params_txt, fieldnames=params)
+                writer.writeheader()
+                writer.writerow(dict({"Crypto_gambling_amout": {Crypto_gambling_amout}}))
+                
     def run(self):
         cur_positions = self.get_position_tickers()
         # Show current held positions
@@ -59,4 +78,4 @@ class stock_trader():
         # print(f"Here are the financials for the stock that you own:")
         # self.get_position_financials()
         # print("Checkout these stocks:")
-1        
+        self.set_gambling_params()
