@@ -14,7 +14,7 @@ def check_stock(stock="msft"):
 
 
 
-check_stock()
+# check_stock()
 
 
     

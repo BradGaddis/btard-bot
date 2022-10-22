@@ -1,7 +1,8 @@
 import requests 
 from config import *
 import json
-
+import os
+import csv
 
 
 def get_cryptos_tradable():
@@ -17,4 +18,8 @@ def get_cryptos_tradable():
             output.append(crypto["symbol"])
     return output
         
-print(get_cryptos_tradable())
+
+def write_tradeable_crypto():
+    file_path = os.path.join(DATA_PATH,"tradable_crypto.csv")
+    with open (file_path, "w") as f:
+        write = csv.writer(f).writerow(get_cryptos_tradable())

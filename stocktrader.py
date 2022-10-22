@@ -14,7 +14,7 @@ from alpaca.trading.enums import OrderSide, TimeInForce
 import os
 
 
-class stock_trader():
+class trader_agent():
     def __init__(self, key = ALPACA_PAPER_KEY, skey = ALPACA_PAPER_SECRET_KEY) -> None:
         """Trading object: Instanciates to paper account by default, unless specified otherwise."""
         self.trading_client = TradingClient(key, skey)
@@ -27,6 +27,7 @@ class stock_trader():
         self.gamblin_money = self.buying_power * .01 if self.buying_power > 1 else 1    
         self.long_term_invest_amount = (self.buying_power - self.gamblin_money) * .9
         
+        
         for i , pos in enumerate(self.positions):
             self.pos_values.append([])
             for tup in pos:
@@ -34,6 +35,8 @@ class stock_trader():
 
         pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
         pos_df = pos_df.iloc[:,1:]
+
+        self.set_gambling_params()
 
     def get_position_df(self):
         """Returns a dataframe of the current positions held in portfolio"""

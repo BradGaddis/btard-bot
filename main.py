@@ -2,14 +2,14 @@ import assetpicker as ap
 from config import *
 import os
 import concurrent.futures
-from stocktrader import stock_trader
+from stocktrader import trader_agent
 
 # with concurrent.futures.ThreadPoolExecutor() as executor:
 #     executor.map()
 
 # get csv of all stocks in nyse
 # get name of all crypto assets traded on alpaca
-st = stock_trader()
+st = trader_agent()
 
 def main():
     st.run()
