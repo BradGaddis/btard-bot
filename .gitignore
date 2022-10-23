@@ -167,3 +167,5 @@ data/
 .data/
 data/*
 data/stocks_of_interest.csv
+
+twinddpmodel/
