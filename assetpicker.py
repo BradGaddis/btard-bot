@@ -7,7 +7,7 @@ import csv
 import yfinance as yf
 import time
 import pandas as pd
-
+from datetime import date, datetime
 
 def get_metrics():
     """Returns a list of criteria to search by"""
@@ -63,8 +63,11 @@ def check_stock_info(stock):
     return yf.Ticker(stock).info
 
 
-def get_interesting_longterm_stocks(market_cap = 3000000000, restart = False):
+def get_interesting_stocks(market_cap = 3000000000, restart = False):
     """Prints a dataframe of stocks worth looking into by some arbitrary metrics. Market Cap < 3b by default"""
+
+    # This method should be run Sunday-Friday after market close
+    
     stocks_list = []
     try:
         with open("./data/tradable_stocks.csv", "r") as f:
@@ -127,7 +130,7 @@ def load_interesting_stocks(stocks_of_interest):
 
 def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {}, restart = False ):
     with open("./data/stocks_of_interest.csv", "w") as f:
-        fields= ["ticker", *get_metrics(), "cash to debt","complete"]
+        fields= ["ticker", *get_metrics(), "cash to debt","complete","lastCheck"]
         writer = csv.DictWriter(f, fieldnames=fields, delimiter=',') 
         writer.writeheader()
         if not restart:
@@ -167,7 +170,7 @@ def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {
                         
                 except Exception as e:
                     print("error: ", e)
-        writer.writerow({"complete" : True})
+        writer.writerow({"complete" : True, "lastCheck" : datetime.now()})
 
         
 
@@ -195,4 +198,3 @@ def interesting_csv_to_df():
 
 # interesting_csv_to_df()
 
-# get_interesting_longterm_stocks()
