@@ -2,7 +2,7 @@ import assetpicker as ap
 from config import *
 import os
 import concurrent.futures
-from stocktrader import trader_agent
+from trader import trader_agent
 
 # with concurrent.futures.ThreadPoolExecutor() as executor:
 #     executor.map()
