@@ -65,8 +65,6 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
-# Portfolio Data
-data/
 
 # Scrapy stuff:
 .scrapy
@@ -164,3 +162,8 @@ cython_debug/
 
 # config files
 config.py
+# Portfolio Data
+data/
+.data/
+data/*
+data/stocks_of_interest.csv
