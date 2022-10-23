@@ -65,6 +65,9 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
+# Portfolio Data
+data/
+
 # Scrapy stuff:
 .scrapy
 
