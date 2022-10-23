@@ -6,3 +6,5 @@ yfinance
 alpaca-py
 pandas_datareader
 pyEX
+backtrader
+python-crontab
