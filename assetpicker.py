@@ -1,5 +1,3 @@
-from inspect import cleandoc
-from logging import exception
 import requests
 import json
 from config import *
@@ -83,6 +81,8 @@ def get_interesting_stocks(market_cap = 3000000000, restart = False):
     
     if complete:
         return
+
+    full_count = len(stocks_list[0])
     # print("continuing csv dict. remove it and start over? y/n") # TODO
     while not complete:
         try:
@@ -91,19 +91,19 @@ def get_interesting_stocks(market_cap = 3000000000, restart = False):
             if len(stocks_of_interest) == 0:
                 start_point = 0 
             else:
-                start_point = stocks_list[0].index(stocks_of_interest[-1])  + 1
-            
+                start_point = stocks_list[0].index(stocks_of_interest[-1])
             try:
                 stocks_list[0] = stocks_list[0][start_point :]
+                start_point = full_count - len(stocks_list[0])
             except Exception as e:
-                print(e)
+                print("error 1",e)
 
             print(f"start point: {start_point}")    
             if start_point == 0:
                 restart = True
             
             # check stocks that have a positive cash to debt ratio
-            return write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved, restart = restart)
+            return write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved, restart = restart, full_count= full_count, start_point  = start_point)
         except Exception as e:
             print("attempting to wait it out...",e)
             time.sleep(15)
@@ -128,7 +128,7 @@ def load_interesting_stocks(stocks_of_interest):
     return saved, complete
 
 
-def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {}, restart = False ):
+def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {}, restart = False, full_count = 0, start_point = 0):
     with open("./data/stocks_of_interest.csv", "w") as f:
         fields= ["ticker", *get_metrics(), "cash to debt","complete","lastCheck"]
         writer = csv.DictWriter(f, fieldnames=fields, delimiter=',') 
@@ -137,14 +137,16 @@ def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {
             for row in saved:
                 writer.writerow(row)
 
-
         for i, stock in enumerate(stocks_list[0]):
             cash_to_debt = ""
             clear = True
+            if stock in stocks_of_interest:
+                continue
             info = check_stock_info(stock)
             try: 
                 cash_to_debt = info["totalCash"] - info["totalDebt"] 
             except Exception as e:
+                print ("\033[A                                                                         \033[A")
                 print("exception: ", e)
                 continue
             else:
@@ -165,11 +167,13 @@ def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {
                     else: 
                         if clear:
                             print ("\033[A                             \033[A")
-                        print(f"checking stock {i} of {len(stocks_list[0])}")
+                        print(f"checking stock {start_point + i} of {full_count}")
                         clear = True
                         
                 except Exception as e:
+                    print ("\033[A                                                                         \033[A")
                     print("error: ", e)
+                    
         writer.writerow({"complete" : True, "lastCheck" : datetime.now()})
 
         
@@ -197,4 +201,6 @@ def interesting_csv_to_df():
 # check stocks that have revenue that is growing
 
 # interesting_csv_to_df()
+
+get_interesting_stocks()
 
