@@ -77,7 +77,7 @@ class trader_agent():
                             symbol=ticker,
                             notation_or_qty=amt,
                             side=OrderSide.BUY,
-                            time_in_force=tif
+                            time_in_force=TimeInForce.DAY
                             )
 
         # Market order
