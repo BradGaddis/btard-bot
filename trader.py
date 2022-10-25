@@ -37,21 +37,20 @@ class trader_agent():
         # should move all of this into method
         # self.account_balance = float(self.trading_client.get_account().)
         
-        
         # 10% remains in cash for manual buying 
         self.buying_power = float(self.trading_client.get_account().non_marginable_buying_power)
         self.gamblin_monty = self.buying_power * .01 if self.buying_power > 1 else 1    
         self.crypto_gameblin_monty = self.buying_power * .01 if self.buying_power > 1 else 1    
         self.long_term_invest_amount = (self.buying_power - self.gamblin_monty - self.crypto_gameblin_monty) * .9
+        self.total_positions_allowed = 29
         
         self.check_set_gambling_params()
-
         for i , pos in enumerate(self.positions):
             self.pos_values.append([])
             for tup in pos:
                 self.pos_values[i].append((tup[1]))
 
-        pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
+            pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
         pos_df = pos_df.iloc[:,1:]
 
     # I'm noob and couldn't figure out how to call the damn get_clock() method. Perhaps someone smarter than me can...
@@ -62,12 +61,54 @@ class trader_agent():
         data = json.loads(new_json)
         print(data)
 
-    def get_position_df(self):
+    def get_positions_df(self):
         """Returns a dataframe of the current positions held in portfolio"""
         pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
         pos_df = pos_df.iloc[:,1:]
         return pos_df
-        
+    
+    def cancel_all_orders(self):
+        self.trading_client.cancel_orders()
+
+    def buy_position(self, ticker, amt, tif):
+        # preparing orders
+        notation_or_qty = "qty" # TODO
+        market_order_data = MarketOrderRequest(
+                            symbol=ticker,
+                            notation_or_qty=amt,
+                            side=OrderSide.BUY,
+                            time_in_force=tif
+                            )
+
+        # Market order
+        market_order = self.trading_client.submit_order(
+                        order_data=market_order_data
+                    )
+
+    def sell_position(self, ticker, amt, tif):
+        # preparing orders
+        notation_or_qty = "qty" # TODO
+        market_order_data = MarketOrderRequest(
+                            symbol=ticker,
+                            notation_or_qty=amt,
+                            side=OrderSide.SELL,
+                            time_in_force=tif
+                            )
+
+        # Market order
+        market_order = self.trading_client.submit_order(
+                        order_data=market_order_data
+                    )
+
+
+    def get_positions(self):
+        for position in self.positions:
+            print(position)
+        return self.positions
+    
+
+    def get_position():
+        pass
 
     def find_potential_new_pos(self):
         pass
@@ -102,13 +143,4 @@ class trader_agent():
                 writer.writerow(dict({"long_term_invest_amount": {self.long_term_invest_amount}}))
                 
     def run(self):
-        # nightly recheck interesting stocks
-        cur_positions = self.get_position_tickers()
-        # Show current held positions
-        print(f"You are currently holding: {cur_positions}")
-        print("Checking the amount of money that you can gamble with...")
-        print(f"Your total account buying power is: {self.buying_power}")
-        print(f"Your total account long term buying power is: {self.long_term_invest_amount}")
-        print(f"Your total account stock buying power is: {self.gamblin_monty}")
-        print(f"Your total account crypto buying power is: {self.crypto_gameblin_monty}")
-        self.check_market_time()
+        print(self.get_positions_df())

@@ -202,5 +202,5 @@ def interesting_csv_to_df():
 
 # interesting_csv_to_df()
 
-get_interesting_stocks()
+# get_interesting_stocks()
 
