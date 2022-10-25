@@ -9,3 +9,5 @@ pyEX
 backtrader
 python-crontab
 tensorflow
+gym
+gym-anytrading
