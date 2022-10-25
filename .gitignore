@@ -168,4 +168,6 @@ data/
 data/*
 data/stocks_of_interest.csv
 
+# ai stuff
 twinddpmodel/
+stable_trader.py
