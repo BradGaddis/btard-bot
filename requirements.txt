@@ -10,4 +10,4 @@ backtrader
 python-crontab
 tensorflow
 gym
-gym-anytrading
+stable_baselines3[extra]

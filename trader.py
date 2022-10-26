@@ -2,6 +2,7 @@ import csv
 from dataclasses import field
 from datetime import datetime
 from alpaca.trading.client import TradingClient
+from pytz import AmbiguousTimeError
 import assetpicker
 from config import *
 import pandas as pd
@@ -44,14 +45,15 @@ class trader_agent():
         self.long_term_invest_amount = (self.buying_power - self.gamblin_monty - self.crypto_gameblin_monty) * .9
         self.total_positions_allowed = 29
         
-        self.check_set_gambling_params()
+        
+        # self.check_set_gambling_params()
         for i , pos in enumerate(self.positions):
             self.pos_values.append([])
             for tup in pos:
                 self.pos_values[i].append((tup[1]))
 
-            pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
-        pos_df = pos_df.iloc[:,1:]
+        self.pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
+        # pos_df = pos_df.iloc[:,1:]
 
     # I'm noob and couldn't figure out how to call the damn get_clock() method. Perhaps someone smarter than me can...
     def check_market_time(self):
@@ -63,16 +65,15 @@ class trader_agent():
 
     def get_positions_df(self):
         """Returns a dataframe of the current positions held in portfolio"""
-        pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
-        pos_df = pos_df.iloc[:,1:]
-        return pos_df
+        self.pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
+        # self.pos_df = self.pos_df.iloc[:,1:]
+        return self.pos_df
     
     def cancel_all_orders(self):
         self.trading_client.cancel_orders()
 
-    def buy_position(self, ticker, amt, tif):
+    def buy_position_market(self, ticker, amt = 1, notation_or_qty = "qty"):
         # preparing orders
-        notation_or_qty = "qty" # TODO
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
                             notation_or_qty=amt,
@@ -85,9 +86,9 @@ class trader_agent():
                         order_data=market_order_data
                     )
 
-    def sell_position(self, ticker, amt, tif):
+    def sell_position_market(self, ticker, amt, tif):
         # preparing orders
-        notation_or_qty = "qty" # TODO
+        AmbiguousTimeError = "qty" # TODO
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
                             notation_or_qty=amt,
@@ -144,3 +145,6 @@ class trader_agent():
                 
     def run(self):
         print(self.get_positions_df())
+        # print(self.get_positions())
+        # print(self.trading_client.get_orders())
+        
