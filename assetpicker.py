@@ -10,7 +10,8 @@ from datetime import date, datetime
 def get_metrics():
     """Returns a list of criteria to search by"""
     metrics = []
-    with open("./data/yahooinfometrics.csv", "r") as f:
+    path = os.path.join(DATA_PATH, "yahooinfometrics.csv")
+    with open(path, "r") as f:
         reader = csv.reader(f)
         metrics = list(reader)
 
@@ -36,14 +37,6 @@ def get_tradable_stocks():
         
 
 def check_metric_financial(stocks = []):
-    # total revenue should be increasing on average on avereage
-    # gross profit should be increasing every year on avereage
-    # income before tax should increase on average
-    # should be below 200 ma 
-    # ratio of cash to debt should be positive
-    # check rsi
-    # check macd?
-    # compare sectors?
     pass
 
 def compare_sectors(assets = []):
@@ -52,10 +45,6 @@ def compare_sectors(assets = []):
 
 def check_stock_financial(stock="msft"):
     return yf.Ticker(stock).financials
-
-# def check_balance_sheet(asset = "SPY"): 
-#     for i in range(len(asset)):
-#         check_stock(asset[0])
 
 def check_stock_info(stock):
     return yf.Ticker(stock).info
@@ -84,29 +73,84 @@ def get_interesting_stocks(market_cap = 3000000000, restart = False):
 
     full_count = len(stocks_list[0])
     # print("continuing csv dict. remove it and start over? y/n") # TODO
+
+    start_point = 0
+
+    def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {}, restart = False, full_count = 0 ):
+        with open("./data/stocks_of_interest.csv", "w") as f:
+            fields= ["ticker", *get_metrics(), "cash to debt","complete","lastCheck"]
+            writer = csv.DictWriter(f, fieldnames=fields, delimiter=',') 
+            writer.writeheader()
+            if not restart:
+                for row in saved:
+                    writer.writerow(row)
+
+            for i, stock in enumerate(stocks_list[0]):
+                cash_to_debt = ""
+                clear = True
+                nonlocal start_point 
+                start_point += 1
+                if stock in stocks_of_interest:
+                    continue
+                info = check_stock_info(stock)
+                try: 
+                    cash_to_debt = info["totalCash"] - info["totalDebt"] 
+                except Exception as e:
+                    print ("\033[A                                                                         \033[A")
+                    print("exception: ", e)
+                    continue
+                else:
+                    try:
+                        if info["country"] == "United States" and cash_to_debt > 0 and info["dividendYield"] and info["marketCap"] <= market_cap and info["beta"] < 1:
+                            stocks_of_interest.append(stock)
+                            row = dict({"ticker": str(stock)})
+                            for metric in get_metrics():
+                                try:
+                                    row[str(metric)] = str(info[metric])
+                                except:
+                                    row[str(metric)] = None
+                            row["cash to debt"] = str(cash_to_debt)
+                            writer.writerow(row)
+                            
+                            clear = False
+                            show_interesting_stock(stocks_of_interest, stock, cash_to_debt, info)
+                        else: 
+                            if clear:
+                                print ("\033[A                             \033[A")
+                            print(f"checking stock {start_point} of {full_count}, cash - debt:")
+                            clear = True
+                            
+                    except Exception as e:
+                        print ("\033[A                                                                         \033[A")
+                        print("error: ", e)
+                        
+            writer.writerow({"complete" : True, "lastCheck" : datetime.now()})
+
+
+    has_started = False
     while not complete:
         try:
             print(f"stocks of interest {stocks_of_interest}")
-
-            if len(stocks_of_interest) == 0:
-                start_point = 0 
-            else:
-                start_point = stocks_list[0].index(stocks_of_interest[-1])
+            if not has_started:
+                if len(stocks_of_interest) == 0:
+                    start_point = 0 
+                else:
+                    start_point = stocks_list[0].index(stocks_of_interest[-1])
             try:
                 stocks_list[0] = stocks_list[0][start_point :]
                 start_point = full_count - len(stocks_list[0])
             except Exception as e:
-                print("error 1",e)
+                print("inner loop error: ",e)
 
-            print(f"start point: {start_point}")    
-            if start_point == 0:
-                restart = True
-            
+                print(f"start point: {start_point}")    
+                if start_point == 0:
+                    restart = True
+            has_started = True
             # check stocks that have a positive cash to debt ratio
-            return write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved, restart = restart, full_count= full_count, start_point  = start_point)
+            write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved, restart = restart, full_count= full_count)
         except Exception as e:
             print("attempting to wait it out...",e)
-            time.sleep(15)
+            time.sleep(5)
 
 def load_interesting_stocks(stocks_of_interest):
     saved = []
@@ -128,55 +172,7 @@ def load_interesting_stocks(stocks_of_interest):
     return saved, complete
 
 
-def write_interesting_csv(market_cap, stocks_list, stocks_of_interest, saved = {}, restart = False, full_count = 0, start_point = 0):
-    with open("./data/stocks_of_interest.csv", "w") as f:
-        fields= ["ticker", *get_metrics(), "cash to debt","complete","lastCheck"]
-        writer = csv.DictWriter(f, fieldnames=fields, delimiter=',') 
-        writer.writeheader()
-        if not restart:
-            for row in saved:
-                writer.writerow(row)
 
-        for i, stock in enumerate(stocks_list[0]):
-            cash_to_debt = ""
-            clear = True
-            if stock in stocks_of_interest:
-                continue
-            info = check_stock_info(stock)
-            try: 
-                cash_to_debt = info["totalCash"] - info["totalDebt"] 
-            except Exception as e:
-                print ("\033[A                                                                         \033[A")
-                print("exception: ", e)
-                continue
-            else:
-                try:
-                    if info["country"] == "United States" and cash_to_debt > 0 and info["dividendYield"] and info["marketCap"] <= market_cap and info["beta"] < 1:
-                        stocks_of_interest.append(stock)
-                        row = dict({"ticker": str(stock)})
-                        for metric in get_metrics():
-                            try:
-                                row[str(metric)] = str(info[metric])
-                            except:
-                                 row[str(metric)] = None
-                        row["cash to debt"] = str(cash_to_debt)
-                        writer.writerow(row)
-                        
-                        clear = False
-                        show_interesting_stock(stocks_of_interest, stock, cash_to_debt, info)
-                    else: 
-                        if clear:
-                            print ("\033[A                             \033[A")
-                        print(f"checking stock {start_point + i} of {full_count}")
-                        clear = True
-                        
-                except Exception as e:
-                    print ("\033[A                                                                         \033[A")
-                    print("error: ", e)
-                    
-        writer.writerow({"complete" : True, "lastCheck" : datetime.now()})
-
-        
 
 def show_interesting_stock(stocks_of_interest, stock, cash_to_debt, info):
     print(stock, [(metric, info[metric]) for metric in get_metrics()],("cash to debt",cash_to_debt),"\n",info["longBusinessSummary"], "\n",stocks_of_interest,"\n", len(stocks_of_interest),"\n")
