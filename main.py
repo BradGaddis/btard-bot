@@ -37,9 +37,8 @@ model = PPO("MlpPolicy", env, verbose=1)
 #     env.render()
 
 def main():
-    st.run()
     try:
-        main()
+        st.run()
         # run_model()
     except KeyboardInterrupt:
         print('Interrupted. Closing Model')

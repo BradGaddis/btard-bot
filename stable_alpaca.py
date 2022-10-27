@@ -2,21 +2,30 @@ import gym
 from gym import spaces
 import numpy as np
 from trader import trader_agent
+import csv
+import os
+import config
 
-N_DISCRETE_ACTIONS = 3 # buy, sell, and hold
+def list_cryptos():
+    out = []
+    with open(os.path.join(config.DATA_PATH, "tradable_crypto.csv"), "r") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            out.append(row)
+    return out[0]
+
+
+N_MULTIDISCRETE_ACTIONS = [3, # buy, sell, or hold
+0] 
 
 class paca_env(gym.Env):
     def __init__(self, agent) -> None:
         super(paca_env, self).__init__
-        # Define action and observation space
-        # They must be gym.spaces objects
-        # Example when using discrete actions:
-        self.action_space = spaces.Discrete(N_DISCRETE_ACTIONS)
-        # Example for using image as input (channel-first; channel-last also works):
+        self.action_space = spaces.MultiDiscrete(N_MULTIDISCRETE_ACTIONS)
+        # Example for using image as input (channel-first; channel-last also works)D:
         self.observation_space = spaces.Box(low=0, high=255,
                                             shape=(1, ), dtype=np.float32)
-        self.agent = agent
-
+        self.trade_agent = agent
 
     def step(self, action):
         # observe current positions
@@ -27,14 +36,14 @@ class paca_env(gym.Env):
 
         # Do not allow 'buy' if account has too many positions, open or otherwise
         if action == 1:        
-            self.agent.buy_position()
+            self.trade_agent.buy_position(action)
             # add some reward 
         elif action == 2:
             # hold
-            # add some base reward
+            # add some base reward just for holding
             pass
         elif action == 3:
-            self.agent.sell_position()
+            self.trade_agent.sell_position(action)
             # if sell was profitable, add reward
             # if sell was detrimental, reduce reward
 
@@ -50,7 +59,7 @@ class paca_env(gym.Env):
     def reset(self):
         self.done = False
         self.positions
-        self.past_trades
+        self.past_trades = np.array()
 
         
         return self.observation  # reward, done, info can't be included
