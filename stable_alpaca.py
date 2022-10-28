@@ -16,7 +16,7 @@ def list_cryptos():
 
 
 N_MULTIDISCRETE_ACTIONS = [3, # buy, sell, or hold
-0] 
+1] 
 
 class paca_env(gym.Env):
     def __init__(self, agent) -> None:

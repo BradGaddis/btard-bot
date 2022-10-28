@@ -7,7 +7,7 @@ from alpaca.data.historical import CryptoHistoricalDataClient
 from alpaca.data.requests import CryptoBarsRequest
 from alpaca.data.timeframe import TimeFrame
 import requests
-import cryptomanager
+# import cryptomanager
 
 # returns all available crypto on Alpaca to trade against
 # tradable_crypto = get_tradable()
@@ -22,7 +22,7 @@ def subscribe_to_quote(symbol = "BTC/USD"):
     async def quote_data_handler(data):
         # quote data will arrive here
         print(data)
-    wss_client.subscribe_quotes(quote_data_handler, symbol)
+    wss_client.subscribe_bars(quote_data_handler, symbol)
     wss_client.run()
 
 
@@ -46,5 +46,6 @@ def get_historical_data(start = None, end = None, cryptos = ["BTC/USD"]):
 # r = requests.get("wss://stream.data.alpaca.markets/v1beta2/crypto")
 # print(r.content)
 
-for i in range(29):
-    subscribe_to_quote(cryptomanager.get_cryptos_tradable()[i])
+# for i in range(29):
+#     subscribe_to_quote(cryptomanager.get_cryptos_tradable()[i])
+# subscribe_to_quote()

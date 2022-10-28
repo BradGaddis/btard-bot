@@ -9,9 +9,9 @@ from stable_alpaca import paca_env
 import sys
 
 st = trader_agent()
-env = paca_env(st)
+# env = paca_env(st)
 # # Instantiate the agent
-model = PPO("MlpPolicy", env, verbose=1)
+# model = PPO("MlpPolicy", env, verbose=1)
 # # Train the agent and display a progress bar
 # # Save the agent
 # model.save("dqn_lunar")
