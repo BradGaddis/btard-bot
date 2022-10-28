@@ -7,11 +7,12 @@ from trader import trader_agent
 from stable_baselines3 import PPO
 from stable_alpaca import paca_env
 import sys
+from stable_baselines3.common.env_checker import check_env
 
-st = trader_agent()
-# env = paca_env(st)
+trader = trader_agent()
+env = paca_env(trader)
 # # Instantiate the agent
-# model = PPO("MlpPolicy", env, verbose=1)
+model = PPO("MlpPolicy", env, verbose=1)
 # # Train the agent and display a progress bar
 # # Save the agent
 # model.save("dqn_lunar")
@@ -38,8 +39,9 @@ st = trader_agent()
 
 def main():
     try:
-        st.run()
+        trader.run()
         # run_model()
+        # check_env(env)
     except KeyboardInterrupt:
         print('Interrupted. Closing Model')
         env.close()
@@ -54,13 +56,17 @@ def load_model(path, env):
 
 def run_model():
     model_counter = 0
-    while model_counter > 1:
+    while True:
         obs = env.reset()
-        model.learn(total_timesteps=int(10000), progress_bar=True, tensorboard=LOG_PATH)
-        model.save(f"{os.path.join(MODEL_PATH), model_counter}")
+        action = model.predict()
         env.render()
-        obs, reward, done, info = env.step(env.action_space.sample())
+        obs, reward, done, info = env.step(action)
         print(reward)
+        if model_counter % 10000 == 0:
+            model.save(f"{os.path.join(MODEL_PATH), str(model_counter)}")
 
 if __name__ == "__main__":
     main()
+
+
+# model.learn(total_timesteps=int(10000), progress_bar=True, tensorboard=LOG_PATH)

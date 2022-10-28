@@ -14,7 +14,7 @@ from config import *
 from datetime import datetime
 from datetime import timedelta
 from sklearn.compose import ColumnTransformer,make_column_transformer
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, StandardScaler
 
 
 crypto_hist_client = CryptoHistoricalDataClient(api_key=ALPACA_LIVE_KEY, secret_key=ALPACA_LIVE_SECRET_KEY)
@@ -50,10 +50,9 @@ def get_snapshot_info_all():
     print(output)
     return output
 
-class historical_data_df():
-    def __init__ (self, start = None, end = None, minute = None, minutes_N = 0 , cryptos = ["BTC/USD"], sample_amt = 1):
+def historical_data_df(start = None, end = None, minute = None, minutes_N = 0 , cryptos = ["BTC/USD"], limit = 0):
         # # no keys required for crypto data
-        self.client = CryptoHistoricalDataClient()
+        client = CryptoHistoricalDataClient()
         start = datetime.now() - timedelta(minutes_N)
         
         request_params = CryptoBarsRequest(
@@ -63,62 +62,64 @@ class historical_data_df():
                                 end=None
                         )
 
-        self.bars = self.client.get_crypto_bars(request_params)
-        self.cryptos = cryptos
-        self.get_df(self.cryptos, self.bars)
+        bars = client.get_crypto_bars(request_params)
+        cryptos = cryptos
+        return get_df(cryptos, bars, limit)
 
-    def get_df(self, cryptos = None, bars = None):
-        if not cryptos:
-            cryptos = self.cryptos
-        if not bars:
-            bars = self.bars
-        output = [bars[crypto] for crypto in cryptos]
-        take_last = [crypto_bar[:] for crypto_bar in output] # this is a 2d array
-        all_dicts = []
+def get_df(cryptos = None, bars = None, limit = 0):
+    if not cryptos:
+        cryptos = cryptos
+    if not bars:
+        bars = bars
+    output = [bars[crypto] for crypto in cryptos]
+    individual = [crypto_bar[:] for crypto_bar in output] # this is a 2d array
+    all_dicts = []
 
-        for item in take_last:
-            for crypto_bar in item:
-                all_dicts.append(dict(crypto_bar))
+    for item in individual:
+        for crypto_bar in item:
+            all_dicts.append(dict(crypto_bar))
 
-        keys = list(all_dicts[0].keys())
-        values = []
-        
-        for i , item in enumerate(all_dicts):
-            values.append([])
-            for key in keys:
-                values[i].append(item[key])
-
-        df = pd.DataFrame(values,columns=keys)
-
-        columns = ["open", "high","low","close","trade_count","volume","vwap"]
-        encode = ["symbol"]
-        self.df_out = self.column_scaler(df, columns)
-        self.df_out = self.column_encoder(df, encode)
-        self.df_out.drop(["timestamp"], inplace=True, axis=1)
-
-        return self.df_out
+    keys = list(all_dicts[0].keys())
+    values = []
     
-    def get_last(self):
-        return(self.df_out.iloc[[ -1]])
-        
+    for i , item in enumerate(all_dicts):
+        values.append([])
+        for key in keys:
+            values[i].append(item[key])
+
+    df = pd.DataFrame(values,columns=keys)
+
+    columns = ["open", "high","low","close","trade_count","volume","vwap"]
+    encode = ["symbol"]
+    df_revised = column_scaler(df, columns)
+    df_revised = column_encoder(df, encode)
+    df_revised.drop(["timestamp"], inplace=True, axis=1)
+    
+    df_out = df_revised.iloc[-limit:]
+    if limit > 0:
+        df_out.join(df_revised.iloc[-limit:])
+        return df_out
+    else:
+        return df_revised
+    
 
 
-    def column_scaler(self, df , columns):
-        for column in columns:
-            arr = np.reshape( np.array(df[column]),(-1,1))
-            scaler = MinMaxScaler( )
-            df[column] = scaler.fit_transform(arr)
-        return df
+def column_scaler( df , columns):
+    for column in columns:
+        arr = np.reshape( np.array(df[column]),(-1,1))
+        scaler = MinMaxScaler( )
+        df[column] = scaler.fit_transform(arr)
+    return df
 
-    def column_encoder(seld, df , columns):
-        for column in columns:
-            # Get one hot encoding of columns B
-            one_hot = pd.get_dummies(df[column])
-            # Drop column B as it is now encoded
-            df = df.drop(column,axis = 1)
-            # Join the encoded df
-            df = df.join(one_hot)
-        return df
+def column_encoder(df , columns):
+    for column in columns:
+        # Get one hot encoding of columns B
+        one_hot = pd.get_dummies(df[column])
+        # Drop column B as it is now encoded
+        df = df.drop(column,axis = 1)
+        # Join the encoded df
+        df = df.join(one_hot)
+    return df
 
 # prev_min = 0
 # clear = lambda: os.system('cls')

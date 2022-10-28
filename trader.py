@@ -188,7 +188,9 @@ class trader_agent():
         df = pd.DataFrame(values, columns=keys)
         
         df.filled_at = df.filled_at.apply(lambda x: pd.to_datetime(x))
-        df["will_be_day_trade"] = int(df.filled_at.apply(lambda x: parser.parse(x.strftime('%Y-%m-%d')) +  timedelta(days=1) > datetime.now()))
+        df["will_be_day_trade"] = df.filled_at.apply(lambda x: parser.parse(x.strftime('%Y-%m-%d')) +  timedelta(days=1) > datetime.now())
+        df.will_be_day_trade = df.will_be_day_trade.apply(lambda x: int(x))
+
         df = column_encoder(df, [])
         df = df.iloc[ :,13:]
 
@@ -203,8 +205,10 @@ class trader_agent():
 
         df = column_encoder(df, ["symbol", "asset_class","order_class","order_type","status","side","type"])
         df = df.fillna(value=0)
+        df = column_scaler(df, ["filled_qty", "filled_avg_price"])
 
         df.extended_hours = df.extended_hours.apply(lambda x: int(x))
+
         return df
 
 def column_encoder(df_in , columns):
@@ -216,3 +220,10 @@ def column_encoder(df_in , columns):
         # # Join the encoded df
         df_in = df_in.join(one_hot)
     return df_in
+
+def column_scaler( df , columns):
+    for column in columns:
+        arr = np.reshape( np.array(df[column]),(-1,1))
+        scaler = MinMaxScaler( )
+        df[column] = scaler.fit_transform(arr)
+    return df
