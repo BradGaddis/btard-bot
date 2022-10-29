@@ -2,6 +2,7 @@ import csv
 from dataclasses import field
 from datetime import datetime
 from datetime import timedelta
+from turtle import position
 from alpaca.trading.client import TradingClient
 from pytz import AmbiguousTimeError
 import assetpicker
@@ -25,6 +26,7 @@ from alpaca.trading.enums import AssetClass
 from alpaca.trading.requests import GetOrdersRequest
 from alpaca.trading.enums import OrderSide, OrderStatus
 from alpaca.trading.requests import ClosePositionRequest
+from uuid import UUID
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder
 
 
@@ -39,10 +41,10 @@ class trader_agent():
         
         # this sets up an array of positons that are currently in the account
         self.positions = self.trading_client.get_all_positions()
-        self.pos_keys = [pos[0] for pos in self.positions[0]]
-        self.pos_values = []
-        self.cur_pos_df = pd.DataFrame()
+
+        self.pos_keys = []
         self.pos_values = []    
+        self.cur_pos_df = self.update_cur_pos_df()
         self.position_count = len(self.positions)
 
         # 10% remains in cash for manual buying, should one choose to
@@ -63,17 +65,25 @@ class trader_agent():
     ## ---- ##
 
     def update_cur_pos_df(self):
-        self.positions = self.trading_client.get_all_positions()
-
-        for i , pos in enumerate(self.positions):
-            self.pos_values.append([])
-            for tup in pos:
-                self.pos_values[i].append((tup[1]))
-
-        self.cur_pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
         
-        return self.cur_pos_df
+        self.positions = self.trading_client.get_all_positions()
+        if len(self.positions) > 0:
+            self.pos_keys = [pos[0] for pos in self.positions[0]] 
+            self.pos_values = []
 
+            for i , pos in enumerate(self.positions):
+                self.pos_values.append([])
+                for tup in pos:
+                    self.pos_values[i].append((tup[1]))
+
+            self.cur_pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
+            
+            return self.cur_pos_df
+        else:
+            return None
+
+    def cancel_orders(self):
+        self.trading_client.cancel_orders()
 
     # I'm noob and couldn't figure out how to call the damn get_clock() method. Perhaps someone smarter than me can...
     def get_market_time(self):
@@ -99,12 +109,12 @@ class trader_agent():
 
         if self.position_count > self.total_positions_allowed: # TODO add logic to env
             return trade_result
-
+        print("buying ", ticker)
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
-                            notation_or_qty=amt,
+                            notional=amt,
                             side=OrderSide.BUY,
-                            time_in_force=TimeInForce.DAY
+                            time_in_force=TimeInForce.GTC 
                             )
 
         # Market order
@@ -113,29 +123,23 @@ class trader_agent():
                     )
 
 
-    def sell_position_market(self, ticker = "BTC/USD", amt = 1, notation_or_qty = "qty"):
-        # preparing orders
-        # market_order_data = MarketOrderRequest(
-        #                     symbol=ticker,
-        #                     notation_or_qty=amt,
-        #                     side=OrderSide.SELL,
-        #                     time_in_force=TimeInForce.DAY
-        #                     )
-        cpr = ClosePositionRequest(
-            percentage="100"
-
-        )
-        self.trading_client.close_position(ticker,cpr)
-
-        # # Market order
-        # market_order = self.trading_client.submit_order(
-        #                 order_data=market_order_data
-        #             )
+    def sell_position_market(self, ticker = "ETHUSD", amt = 1, notation_or_qty = "qty"):
+        # print(self.positions)
+        pos_to_close_id = None
+        unrealized_pl = 0
+        for position in self.positions:
+            position = dict(position)
+            print("selling ", ticker)
+            if position["symbol"] == ticker:
+                pos_to_close_id = position["asset_id"]
+                unrealized_pl = float(position["unrealized_pl"])
+        close = self.trading_client.close_position(pos_to_close_id)
+        return  unrealized_pl
 
 
     def get_positions(self):
-        for position in self.positions:
-            print(position)
+        # for position in self.positions:
+        #     print(position)
         return self.positions
     
 
@@ -213,7 +217,7 @@ class trader_agent():
 
         df = column_encoder(df, ["symbol", "asset_class","order_class","order_type","status","side","type"])
         df = df.fillna(value=0)
-        df = column_scaler(df, ["filled_qty", "filled_avg_price"])
+        # df = column_scaler(df, ["filled_qty", "filled_avg_price"])
 
         df.extended_hours = df.extended_hours.apply(lambda x: int(x))
 
@@ -221,9 +225,10 @@ class trader_agent():
 
     def run(self):
         # self.buy_position_at_market("BTC/USD")
-        print(self.get_all_orders_df())
-        self.sell_position_market()
+        # print(self.get_all_orders_df())
 
+        # self.sell_position_market()
+        pass
 
 
 

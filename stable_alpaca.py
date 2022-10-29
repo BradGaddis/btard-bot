@@ -7,6 +7,7 @@ import os
 import config
 import pandas as pd
 from cryptomanager import historical_data_df
+import time
 
 
 def list_cryptos():
@@ -36,7 +37,10 @@ class paca_env(gym.Env):
         super(paca_env, self).__init__
         self.agent = agent
         self.positions = self.agent.get_position_tickers() # the assets that we are presently holding
-        self.len_pos = len(self.positions)
+        if len(self.positions) == 0:
+            self.len_pos = 1
+        else:
+            self.len_pos = len(self.positions)
 
         self.n_actions = [ self.len_pos, # which position to take a peak at on each iteration
         CRYPTO_LEN, # which asset to look at that we haven't bought
@@ -45,53 +49,59 @@ class paca_env(gym.Env):
         ]
         
         self.action_space = spaces.MultiDiscrete(self.n_actions)
-        self.observation = self.agent.get_all_orders_df().to_numpy()
+        self.observation = np.asfarray(self.agent.get_all_orders_df().to_numpy().flatten())
         self.obs_shape = self.observation.shape
-        self.observation_space = spaces.Box(low=0, high=1, shape = self.obs_shape)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape = self.obs_shape)
         self.reward = 0
-        print("idk butts or something" , self.obs_shape)
 
         
     def step(self, action):
+        # print(action[0][1]) # just to help me remember how the hell that worked. This algorithim is fucked rn lol
         # observe current positions
         # loop through current positions, decide if we should sell them
             # make some observation about each position
 
         # loop through available tickers to determine which that we should buy
         # make some observation about each ticker
-        for crypto in usd_crypto:
-            self.observation + historical_data_df(cryptos=crypto).to_numpy()
-        
+        # for crypto in usd_crypto:
+        #     self.observation += np.asfarray(historical_data_df(cryptos=[crypto]).to_numpy().flatten())
+        self.observation = np.asfarray(self.agent.get_all_orders_df().to_numpy().flatten())
 
-        # Do not allow 'buy' if account has too many positions, open or otherwise
-        if action[2] == 1:        
-            self.trade_agent.buy_position_at_market(usd_crypto[action[1]])
-            # add some reward 
-        elif action[0] == 1:
-            # hold
-            # add some base reward just for holding
-            # increase reward so long as holding and profit is increasing
-            pass
-        elif action[0] == 2:
-            # how do I know if sell was profitable?
-            # loop through positions, sell one?
-            for position in self.positions:
-                pass
-
-            self.trade_agent.sell_position(action)
-            # if sell was profitable, add reward
-            # if sell was detrimental, reduce reward
-
-        # if no positions in portfolio, reduce reward
-
-        # get positions
-        info = {}
-        
-        # subscribe to stock bars or some shit
         self.obs_shape = self.observation.shape
 
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape = self.obs_shape)
 
-        self.observation_space = spaces.Box(low=0, high=1, shape = self.obs_shape)
+
+        if self.len_pos > 1:
+            # position in question
+            if action[0][3] == 1: # sell position in question
+                profit = self.agent.sell_position_market(self.positions[action[0][0]])
+                self.reward += profit
+                # if sell was profitable, add reward
+                # if sell was detrimental, reduce reward
+
+        # if no positions in portfolio, reduce reward
+        time.sleep(5)
+        if action[0][2]: # should buy some asset in question
+            print(usd_crypto[action[0][1]])
+            self.agent.buy_position_at_market(usd_crypto[action[0][1]])
+        info = {}
+        time.sleep(5)
+        
+
+        self.observation = np.asfarray(self.agent.get_all_orders_df().to_numpy().flatten())
+
+        self.obs_shape = self.observation.shape
+
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape = self.obs_shape)
+        # subscribe to stock bars or some shit
+
+        self.observation = np.asfarray(self.agent.get_all_orders_df().to_numpy().flatten())
+
+        self.obs_shape = self.observation.shape
+
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape = self.obs_shape)
+
         return self.observation, self.reward, self.done, info
 
 
@@ -100,10 +110,12 @@ class paca_env(gym.Env):
         self.done = False
         self.positions = self.agent.get_position_tickers()
         # self.past_trades = np.array()
-        self.observation = self.agent.get_all_orders_df().to_numpy()
+        self.observation = np.asfarray(self.agent.get_all_orders_df().to_numpy().flatten())
         self.obs_shape = self.observation.shape
-        self.observation_space = spaces.Box(low=0, high=1, shape = self.obs_shape)
-        self.len_pos = len(self.positions)
+        print(self.obs_shape)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape = self.obs_shape)
+        if len(self.positions) == 0:
+            self.len_pos = 1
         self.n_actions = [ self.len_pos, # which position to take a peak at on each iteration
         CRYPTO_LEN, # which asset to look at that we haven't bought
         2,  # choose to buy or skip asset
@@ -115,4 +127,4 @@ class paca_env(gym.Env):
     def render(self, mode="human"):
         pass
     def close (self):
-        pass
+        self.agent.cancel_orders()

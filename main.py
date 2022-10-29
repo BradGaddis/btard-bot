@@ -40,7 +40,7 @@ model = PPO("MlpPolicy", env, verbose=1)
 def main():
     try:
         trader.run()
-        # run_model()
+        run_model()
         # check_env(env)
     except KeyboardInterrupt:
         print('Interrupted. Closing Model')
@@ -58,8 +58,8 @@ def run_model():
     model_counter = 0
     while True:
         obs = env.reset()
-        action = model.predict()
-        env.render()
+        action = model.predict(obs)
+        # env.render()
         obs, reward, done, info = env.step(action)
         print(reward)
         if model_counter % 10000 == 0:
