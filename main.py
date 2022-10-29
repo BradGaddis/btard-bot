@@ -10,9 +10,9 @@ import sys
 from stable_baselines3.common.env_checker import check_env
 
 trader = trader_agent()
-env = paca_env(trader)
-# # Instantiate the agent
-model = PPO("MlpPolicy", env, verbose=1)
+# env = paca_env(trader)
+# # # Instantiate the agent
+# model = PPO("MlpPolicy", env, verbose=1)
 # # Train the agent and display a progress bar
 # # Save the agent
 # model.save("dqn_lunar")
@@ -40,7 +40,7 @@ model = PPO("MlpPolicy", env, verbose=1)
 def main():
     try:
         trader.run()
-        run_model()
+        # run_model()
         # check_env(env)
     except KeyboardInterrupt:
         print('Interrupted. Closing Model')

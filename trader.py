@@ -44,7 +44,7 @@ class trader_agent():
 
         self.pos_keys = []
         self.pos_values = []    
-        self.cur_pos_df = self.update_cur_pos_df()
+        self.cur_pos_df = self.get_cur_pos_df()
         self.position_count = len(self.positions)
 
         # 10% remains in cash for manual buying, should one choose to
@@ -57,15 +57,14 @@ class trader_agent():
 
         # if set, will not allow the trader to excede this amount of assets in the portfolio
         self.total_positions_allowed = positions_allowed
-        
 
         # self.check_set_gambling_params()
         
 
     ## ---- ##
 
-    def update_cur_pos_df(self):
-        
+    def get_cur_pos_df(self):
+        """Returns a dataframe of the current positions held in portfolio"""
         self.positions = self.trading_client.get_all_positions()
         if len(self.positions) > 0:
             self.pos_keys = [pos[0] for pos in self.positions[0]] 
@@ -77,8 +76,31 @@ class trader_agent():
                     self.pos_values[i].append((tup[1]))
 
             self.cur_pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
+            self.cur_pos_df.drop(["asset_id", "exchange"], inplace=True, axis=1)
+            self.cur_pos_df.asset_class = self.cur_pos_df.asset_class.apply(lambda x: x.split(".")[0])
+            self.cur_pos_df.side = self.cur_pos_df.side.apply(lambda x: x.split(".")[0])
+            self.cur_pos_df = column_onehot_encoder(self.cur_pos_df, ["side", "asset_class"])
+            self.cur_pos_df = self.cur_pos_df.reset_index()
             
-            return self.cur_pos_df
+            self.cur_pos_df.drop("index", inplace=True, axis=1)
+            self.cur_pos_df.set_index(self.cur_pos_df.symbol, inplace=True)
+            self.cur_pos_df = self.cur_pos_df.iloc[:, 1:]
+            # self.cur_pos_df.drop("Factor",axis=1,inplace=True) # drop factor from axis 1 and make changes permanent by inplace=True
+            self.cur_pos_df["us_equity"] = pd.get_dummies(0)
+            self.cur_pos_df.fillna(value=0, inplace=True)
+
+
+            def return_dict_by_symbol(df):
+                df_dict = {}
+                for i, ind in enumerate(df.index):
+                    df_dict[ind] = []
+                    for j, col in enumerate(df.columns):
+                        df_dict[ind].append({col : df.iloc[i, j]})
+                # print(df_dict, "\n")
+                            
+                return df_dict
+
+            return self.cur_pos_df, return_dict_by_symbol(self.cur_pos_df)
         else:
             return None
 
@@ -93,11 +115,6 @@ class trader_agent():
         data = json.loads(new_json)
         print(data)
 
-    def get_positions_df(self):
-        """Returns a dataframe of the current positions held in portfolio"""
-        self.cur_pos_df = pd.DataFrame(self.pos_values, columns=self.pos_keys)
-        return self.cur_pos_df
-    
     def cancel_all_orders(self):
         self.trading_client.cancel_orders()
 
@@ -114,7 +131,7 @@ class trader_agent():
                             symbol=ticker,
                             notional=amt,
                             side=OrderSide.BUY,
-                            time_in_force=TimeInForce.GTC 
+                            time_in_force=TimeInForce.IOC 
                             )
 
         # Market order
@@ -185,11 +202,11 @@ class trader_agent():
 
         # orders that satisfy params
         orders = self.trading_client.get_orders(filter=request_params)
-
+        # print(orders)
         order_dicts = [dict(order) for order in orders]
         keys = list(order_dicts[0].keys())
         values = []
-
+        print(keys)
         for i,order in enumerate(order_dicts):
             values.append([])
             for key in (keys):
@@ -203,7 +220,7 @@ class trader_agent():
         df["will_be_day_trade"] = df.filled_at.apply(lambda x: parser.parse(x.strftime('%Y-%m-%d')) +  timedelta(days=1) > datetime.now())
         df.will_be_day_trade = df.will_be_day_trade.apply(lambda x: int(x))
 
-        df = column_encoder(df, [])
+        df = column_onehot_encoder(df, [])
         df = df.iloc[ :,13:]
 
         df.drop(["time_in_force",],inplace=True, axis=1)
@@ -215,17 +232,38 @@ class trader_agent():
         df.side = df.side.apply(lambda x: str(x).split(".")[1])
         df.type = df.type.apply(lambda x: str(x).split(".")[1])
 
-        df = column_encoder(df, ["symbol", "asset_class","order_class","order_type","status","side","type"])
+        df = column_onehot_encoder(df, ["asset_class","order_class","order_type","status","side","type"])
         df = df.fillna(value=0)
         # df = column_scaler(df, ["filled_qty", "filled_avg_price"])
 
         df.extended_hours = df.extended_hours.apply(lambda x: int(x))
 
-        return df
+        def return_dict_by_symbol(df):
+            assets = df.symbol.unique()
+            df_dict = {}
+            for asset in assets:
+                df_dict[asset] = df[df.symbol == asset].to_dict()
+                # print(df_dict[asset], "\n" )
+            return df_dict
+
+        
+        return df, return_dict_by_symbol(df)
 
     def run(self):
-        # self.buy_position_at_market("BTC/USD")
-        # print(self.get_all_orders_df())
+        # self.buy_position_at_market("BTC")
+        # print(self.get_all_orders_df()[0])
+        # test_stuff = self.get_cur_pos_df()[1]
+
+        # for key in test_stuff.keys():
+        #     print(test_stuff[key], "\n")
+
+        dict_in = self.get_cur_pos_df()[1]
+        for key in dict_in.keys():
+            print(key)
+            for item in dict_in[key]:
+                print(list(item.keys()))
+                for item_key in item.keys():
+                    print(item[item_key])
 
         # self.sell_position_market()
         pass
@@ -234,7 +272,7 @@ class trader_agent():
 
 
 
-def column_encoder(df_in , columns):
+def column_onehot_encoder(df_in , columns):
     for column in columns:
         # Get one hot encoding of columns B
         one_hot = pd.get_dummies(df_in[column])
