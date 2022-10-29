@@ -1,6 +1,7 @@
 BeautifulSoup4
 requests
 alpaca_trade_api
+alpaca-py
 pandas
 yfinance
 alpaca-py
@@ -11,3 +12,4 @@ torch
 gym
 stable_baselines3
 tensorboard
+scikit-learn

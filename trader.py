@@ -24,6 +24,7 @@ from alpaca.trading.requests import GetAssetsRequest
 from alpaca.trading.enums import AssetClass
 from alpaca.trading.requests import GetOrdersRequest
 from alpaca.trading.enums import OrderSide, OrderStatus
+from alpaca.trading.requests import ClosePositionRequest
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder
 
 
@@ -90,10 +91,15 @@ class trader_agent():
     def cancel_all_orders(self):
         self.trading_client.cancel_orders()
 
-    def buy_position_at_market(self, ticker, amt = 1, notation_or_qty = "qty"):
+    def buy_position_at_market(self, ticker, amt = None, notation_or_qty = "qty"):
+        
+        if not amt:
+            amt = self.crypto_gamblin_monty
         trade_result = False
-        if self.total_positions_allowed > self.position_count:
+
+        if self.position_count > self.total_positions_allowed: # TODO add logic to env
             return trade_result
+
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
                             notation_or_qty=amt,
@@ -106,21 +112,25 @@ class trader_agent():
                         order_data=market_order_data
                     )
 
-        return trade_result
 
-    def sell_position_market(self, ticker, amt = 1, notation_or_qty = "qty"):
+    def sell_position_market(self, ticker = "BTC/USD", amt = 1, notation_or_qty = "qty"):
         # preparing orders
-        market_order_data = MarketOrderRequest(
-                            symbol=ticker,
-                            notation_or_qty=amt,
-                            side=OrderSide.SELL,
-                            time_in_force=TimeInForce.DAY
-                            )
+        # market_order_data = MarketOrderRequest(
+        #                     symbol=ticker,
+        #                     notation_or_qty=amt,
+        #                     side=OrderSide.SELL,
+        #                     time_in_force=TimeInForce.DAY
+        #                     )
+        cpr = ClosePositionRequest(
+            percentage="100"
 
-        # Market order
-        market_order = self.trading_client.submit_order(
-                        order_data=market_order_data
-                    )
+        )
+        self.trading_client.close_position(ticker,cpr)
+
+        # # Market order
+        # market_order = self.trading_client.submit_order(
+        #                 order_data=market_order_data
+        #             )
 
 
     def get_positions(self):
@@ -136,6 +146,7 @@ class trader_agent():
         pass
 
     def get_position_tickers(self):
+        self.position_count = len(self.positions)
         return [asset.symbol for asset in self.positions]
 
     def check_set_gambling_params(self):
@@ -160,9 +171,6 @@ class trader_agent():
                 writer.writerow(dict({"crypto_gameblin_monty": {self.crypto_gamblin_monty}}))
                 writer.writerow(dict({"long_term_invest_amount": {self.long_term_invest_amount}}))
                 
-    def run(self):
-        # self.buy_position_at_market("BTC/USD")
-        print(self.get_all_orders_df())
 
 
     def get_all_orders_df(self):
@@ -210,6 +218,16 @@ class trader_agent():
         df.extended_hours = df.extended_hours.apply(lambda x: int(x))
 
         return df
+
+    def run(self):
+        # self.buy_position_at_market("BTC/USD")
+        print(self.get_all_orders_df())
+        self.sell_position_market()
+
+
+
+
+
 
 def column_encoder(df_in , columns):
     for column in columns:

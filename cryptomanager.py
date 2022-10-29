@@ -50,16 +50,16 @@ def get_snapshot_info_all():
     print(output)
     return output
 
-def historical_data_df(start = None, end = None, minute = None, minutes_N = 0 , cryptos = ["BTC/USD"], limit = 0):
+def historical_data_df(start = None, end = None, minutes_N = 0 , cryptos = ["BTC/USD"], limit = 0):
         # # no keys required for crypto data
         client = CryptoHistoricalDataClient()
-        start = datetime.now() - timedelta(minutes_N)
+        # start = datetime.now() - timedelta(minutes_N)
         
         request_params = CryptoBarsRequest(
                                 symbol_or_symbols=cryptos,
                                 timeframe=TimeFrame.Minute,
-                                start=None,
-                                end=None
+                                start=start,
+                                end=end
                         )
 
         bars = client.get_crypto_bars(request_params)
