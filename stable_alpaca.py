@@ -1,5 +1,6 @@
 import gym
 from gym import spaces
+from gym.spaces import space
 import numpy as np
 from trader import trader_agent
 import csv
@@ -55,16 +56,19 @@ class paca_env(gym.Env):
         self.reward = 0
 
     def populate_obs_space(self,dict_in):
-        obs_space = spaces.Dict({
-
-        })        
-        dict_in = self.agent.get_cur_pos_df()[1]
+        dict_out = {}
+        box = spaces.Box(low=-np.inf, high =np.inf , shape =(1,))
         for key in dict_in.keys():
-            print(key)
+            dict_out[key] = key
+            inner_dict = {}
             for item in dict_in[key]:
-                print(list(item.keys()))
                 for item_key in item.keys():
-                    print(item[item_key])
+                    inner_dict[item_key] = box
+            dict_out[key] = spaces.Dict(inner_dict)
+                
+                    
+        obs_space = spaces.Dict(dict_out)        
+        
                     
         return obs_space
 
@@ -91,7 +95,8 @@ class paca_env(gym.Env):
             print(usd_crypto[action[0][1]])
             self.agent.buy_position_at_market(usd_crypto[action[0][1]])
         info = {}
-        
+        self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[1])
+        self.obersvation = self.agent.get_cur_pos_df()[1]
 
         # subscribe to stock bars or some shit
 
@@ -103,9 +108,8 @@ class paca_env(gym.Env):
         self.done = False
         self.positions = self.agent.get_position_tickers()
         # self.past_trades = np.array()
-
-
-    
+        self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[1])
+        self.obersvation = self.agent.get_cur_pos_df()[1]
         if len(self.positions) == 0:
             self.len_pos = 1
         self.n_actions = [ self.len_pos, # which position to take a peak at on each iteration

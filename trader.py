@@ -1,10 +1,8 @@
 import csv
-from dataclasses import field
 from datetime import datetime
 from datetime import timedelta
 from turtle import position
 from alpaca.trading.client import TradingClient
-from pytz import AmbiguousTimeError
 import assetpicker
 from config import *
 import pandas as pd
@@ -253,20 +251,24 @@ class trader_agent():
         # self.buy_position_at_market("BTC")
         # print(self.get_all_orders_df()[0])
         # test_stuff = self.get_cur_pos_df()[1]
-
-        # for key in test_stuff.keys():
-        #     print(test_stuff[key], "\n")
-
-        dict_in = self.get_cur_pos_df()[1]
-        for key in dict_in.keys():
-            print(key)
-            for item in dict_in[key]:
-                print(list(item.keys()))
-                for item_key in item.keys():
-                    print(item[item_key])
+        # # print(test_stuff)
+        # # for key in test_stuff.keys():
+        # #     print(test_stuff[key], "\n")
+        # dict_out = {}
+        # dict_in = self.get_cur_pos_df()[1]
+        # for key in dict_in.keys():
+        #     # print(key)
+        #     inner_dict = {}
+        #     for item in dict_in[key]:
+        #         for item_key in item.keys():
+        #             inner_dict[item_key] = "box"
+        #     dict_out[key] = inner_dict
+            
+        # print(dict_out)
 
         # self.sell_position_market()
         pass
+        
 
 
 
