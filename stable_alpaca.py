@@ -71,28 +71,26 @@ class paca_env(gym.Env):
     def step(self, action):
         # print(action[0][1]) # just to help me remember how the hell that worked. This algorithim is fucked rn lol
 
+        # position in question
         asset_to_sell = self.positions[action[0][0]]
+
         selling = False
+
         if self.len_pos > 1:
-            # position in question
             if action[0][3] == 1: # sell position in question
+                # if sell was profitable, add reward # if sell was detrimental, reduce reward
                 profit = self.agent.sell_position_market(asset_to_sell)
-                # if sell was profitable, add reward
-                # if sell was detrimental, reduce reward
                 self.reward += profit
-                # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
                 selling = True
+
         crypto_to_buy = usd_crypto[action[0][1]]
         # if no positions in portfolio, reduce reward
         if not crypto_to_buy == asset_to_sell and not selling:
             if action[0][2]: # should buy some asset in question
-                # print(usd_crypto[action[0][1]])
                 self.agent.buy_position_at_market(crypto_to_buy)
-                # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
 
-        # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
+        # subscribe to stock bars or some shit TODO
 
-        # subscribe to stock bars or some shit
         obs = self.get_obs(self.agent.get_cur_pos_df()[0], self.positions[action[0][0]])
         
         self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
@@ -109,17 +107,12 @@ class paca_env(gym.Env):
     def get_all_obs(self,df):
         output = {}
         for asset in df.index:
-            # print(asset)
             output[asset] = np.ndarray.astype(  df[asset:asset].to_numpy() , dtype=np.float64)
-        # print(asset)
         return output
         
     def reset(self):
-
         self.done = False
         self.positions = self.agent.get_position_tickers()
-        # self.past_trades = np.array()
-        # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
         self.len_pos = len(self.positions)
         if len(self.positions) == 0:
             self.len_pos = 1
@@ -131,11 +124,11 @@ class paca_env(gym.Env):
         self.action_space = spaces.MultiDiscrete(self.n_actions)
 
         obs = self.get_all_obs(self.agent.get_cur_pos_df()[0])
-        # print(obs)
 
-        return obs
-  # reward, done, info can't be included
+        return obs  # reward, done, info can't be included
+
     def render(self, mode="human"):
         pass
+
     def close (self):
         self.agent.cancel_orders()
