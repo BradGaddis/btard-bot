@@ -50,66 +50,77 @@ class paca_env(gym.Env):
         ]
         
         self.action_space = spaces.MultiDiscrete(self.n_actions)
-        self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[1])
+        self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
         
 
         self.reward = 0
 
+
     def populate_obs_space(self,dict_in):
         dict_out = {}
-        box = spaces.Box(low=-np.inf, high =np.inf , shape =(1,))
-        for key in dict_in.keys():
-            dict_out[key] = key
-            inner_dict = {}
-            for item in dict_in[key]:
-                for item_key in item.keys():
-                    inner_dict[item_key] = box
-            dict_out[key] = spaces.Dict(inner_dict)
-                
+        for key in dict_in.index:
+            shape = dict_in[key:key].to_numpy().shape
+            # print(key)
+            box = spaces.Box(low=-np.inf, high =np.inf , shape = shape)
+            dict_out[key] = box
                     
         obs_space = spaces.Dict(dict_out)        
         
-                    
         return obs_space
 
     def step(self, action):
         # print(action[0][1]) # just to help me remember how the hell that worked. This algorithim is fucked rn lol
-        # observe current positions
-        # loop through current positions, decide if we should sell them
-            # make some observation about each position
 
-        # loop through available tickers to determine which that we should buy
-        # make some observation about each ticker
-        # for crypto in usd_crypto:
-        #     self.observation += np.asfarray(historical_data_df(cryptos=[crypto]).to_numpy().flatten())
+        asset_to_sell = self.positions[action[0][0]]
+        selling = False
         if self.len_pos > 1:
             # position in question
             if action[0][3] == 1: # sell position in question
-                profit = self.agent.sell_position_market(self.positions[action[0][0]])
-                self.reward += profit
+                profit = self.agent.sell_position_market(asset_to_sell)
                 # if sell was profitable, add reward
                 # if sell was detrimental, reduce reward
-
+                self.reward += profit
+                # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
+                selling = True
+        crypto_to_buy = usd_crypto[action[0][1]]
         # if no positions in portfolio, reduce reward
-        if action[0][2]: # should buy some asset in question
-            print(usd_crypto[action[0][1]])
-            self.agent.buy_position_at_market(usd_crypto[action[0][1]])
-        info = {}
-        self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[1])
-        self.obersvation = self.agent.get_cur_pos_df()[1]
+        if not crypto_to_buy == asset_to_sell and not selling:
+            if action[0][2]: # should buy some asset in question
+                # print(usd_crypto[action[0][1]])
+                self.agent.buy_position_at_market(crypto_to_buy)
+                # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
+
+        # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
 
         # subscribe to stock bars or some shit
+        obs = self.get_obs(self.agent.get_cur_pos_df()[0], self.positions[action[0][0]])
+        
+        self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
+        
+        info = {}
+        return obs, self.reward, self.done, info
 
-        return self.observation, self.reward, self.done, info
+    def get_obs(self,df, asset):
+        row = df[asset:asset]
+        nparr = np.ndarray.astype( row.to_numpy() , dtype=np.float64)
+        output = {asset : nparr}
+        return output
 
-
-
+    def get_all_obs(self,df):
+        output = {}
+        for asset in df.index:
+            # print(asset)
+            output[asset] = np.ndarray.astype(  df[asset:asset].to_numpy() , dtype=np.float64)
+        # print(asset)
+        return output
+        
     def reset(self):
+
         self.done = False
         self.positions = self.agent.get_position_tickers()
         # self.past_trades = np.array()
-        self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[1])
-        self.obersvation = self.agent.get_cur_pos_df()[1]
+        # self.observation_space = self.populate_obs_space(self.agent.get_cur_pos_df()[0])
+        self.len_pos = len(self.positions)
         if len(self.positions) == 0:
             self.len_pos = 1
         self.n_actions = [ self.len_pos, # which position to take a peak at on each iteration
@@ -119,7 +130,11 @@ class paca_env(gym.Env):
         ]
         self.action_space = spaces.MultiDiscrete(self.n_actions)
 
-        return self.observation  # reward, done, info can't be included
+        obs = self.get_all_obs(self.agent.get_cur_pos_df()[0])
+        # print(obs)
+
+        return obs
+  # reward, done, info can't be included
     def render(self, mode="human"):
         pass
     def close (self):

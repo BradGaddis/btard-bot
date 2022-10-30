@@ -8,11 +8,12 @@ from stable_baselines3 import PPO
 from stable_alpaca import paca_env
 import sys
 from stable_baselines3.common.env_checker import check_env
+import time
 
 trader = trader_agent()
 env = paca_env(trader)
 # # Instantiate the agent
-model = PPO("MlpPolicy", env, verbose=1)
+model = PPO("MultiInputPolicy", env, verbose=1)
 # # Train the agent and display a progress bar
 # # Save the agent
 # model.save("dqn_lunar")
@@ -58,12 +59,15 @@ def run_model():
     model_counter = 0
     while True:
         obs = env.reset()
+        print("observation: ",obs)
         action = model.predict(obs)
+        # print(action)
         # env.render()
         obs, reward, done, info = env.step(action)
-        print(reward)
+        # print(reward)
         if model_counter % 10000 == 0:
             model.save(f"{os.path.join(MODEL_PATH), str(model_counter)}")
+        
 
 if __name__ == "__main__":
     main()

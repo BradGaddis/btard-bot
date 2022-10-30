@@ -129,7 +129,7 @@ class trader_agent():
                             symbol=ticker,
                             notional=amt,
                             side=OrderSide.BUY,
-                            time_in_force=TimeInForce.IOC 
+                            time_in_force=TimeInForce.GTC 
                             )
 
         # Market order
@@ -138,14 +138,14 @@ class trader_agent():
                     )
 
 
-    def sell_position_market(self, ticker = "ETHUSD", amt = 1, notation_or_qty = "qty"):
+    def sell_position_market(self, ticker, amt = 1, notation_or_qty = "qty"):
         # print(self.positions)
         pos_to_close_id = None
         unrealized_pl = 0
         for position in self.positions:
             position = dict(position)
-            print("selling ", ticker)
             if position["symbol"] == ticker:
+                print("selling ", ticker)
                 pos_to_close_id = position["asset_id"]
                 unrealized_pl = float(position["unrealized_pl"])
         close = self.trading_client.close_position(pos_to_close_id)
@@ -248,25 +248,25 @@ class trader_agent():
         return df, return_dict_by_symbol(df)
 
     def run(self):
-        # self.buy_position_at_market("BTC")
-        # print(self.get_all_orders_df()[0])
-        # test_stuff = self.get_cur_pos_df()[1]
-        # # print(test_stuff)
-        # # for key in test_stuff.keys():
-        # #     print(test_stuff[key], "\n")
-        # dict_out = {}
-        # dict_in = self.get_cur_pos_df()[1]
-        # for key in dict_in.keys():
-        #     # print(key)
-        #     inner_dict = {}
-        #     for item in dict_in[key]:
-        #         for item_key in item.keys():
-        #             inner_dict[item_key] = "box"
-        #     dict_out[key] = inner_dict
-            
-        # print(dict_out)
+        test_stuff = self.get_cur_pos_df()[0]
+        # print(test_stuff)
+        df = self.get_cur_pos_df()[0]
+        # row = df["LINKUSD":"LINKUSD"].
+        # nparr = np.ndarray.astype( row , dtype=np.float64)
+        # print({row : nparr})
 
-        # self.sell_position_market()
+        # print(df["LINKUSD":"LINKUSD"].to_numpy().shape)
+
+
+        # print(get_all_obs(test_stuff))
+        def get_all_obs(df):
+            output = {}
+            for asset in df.index:
+                # print(asset)
+                output[asset] = np.ndarray.astype(  df[asset:asset].to_numpy() , dtype=np.float64)
+            return output
+
+        # print(get_all_obs(df))
         pass
         
 
