@@ -78,12 +78,11 @@ class trader_agent():
             self.cur_pos_df.asset_class = self.cur_pos_df.asset_class.apply(lambda x: x.split(".")[0])
             self.cur_pos_df.side = self.cur_pos_df.side.apply(lambda x: x.split(".")[0])
             self.cur_pos_df = column_onehot_encoder(self.cur_pos_df, ["side", "asset_class"])
+
             self.cur_pos_df = self.cur_pos_df.reset_index()
-            
             self.cur_pos_df.drop("index", inplace=True, axis=1)
             self.cur_pos_df.set_index(self.cur_pos_df.symbol, inplace=True)
             self.cur_pos_df = self.cur_pos_df.iloc[:, 1:]
-            # self.cur_pos_df.drop("Factor",axis=1,inplace=True) # drop factor from axis 1 and make changes permanent by inplace=True
             self.cur_pos_df["us_equity"] = pd.get_dummies(0)
             self.cur_pos_df.fillna(value=0, inplace=True)
 
@@ -129,14 +128,14 @@ class trader_agent():
                             symbol=ticker,
                             notional=amt,
                             side=OrderSide.BUY,
-                            time_in_force=TimeInForce.GTC 
+                            time_in_force=TimeInForce.IOC 
                             )
 
         # Market order
         market_order = self.trading_client.submit_order(
                         order_data=market_order_data
                     )
-
+        # print(market_order)
 
     def sell_position_market(self, ticker, amt = 1, notation_or_qty = "qty"):
         # print(self.positions)
@@ -149,6 +148,7 @@ class trader_agent():
                 pos_to_close_id = position["asset_id"]
                 unrealized_pl = float(position["unrealized_pl"])
         close = self.trading_client.close_position(pos_to_close_id)
+        # print(close)
         return  unrealized_pl
 
 
@@ -218,7 +218,12 @@ class trader_agent():
         df["will_be_day_trade"] = df.filled_at.apply(lambda x: parser.parse(x.strftime('%Y-%m-%d')) +  timedelta(days=1) > datetime.now())
         df.will_be_day_trade = df.will_be_day_trade.apply(lambda x: int(x))
 
-        df = column_onehot_encoder(df, [])
+
+        df = df.reset_index(drop=True)
+        df.set_index(df.id, inplace=True)
+
+
+
         df = df.iloc[ :,13:]
 
         df.drop(["time_in_force",],inplace=True, axis=1)
@@ -230,43 +235,28 @@ class trader_agent():
         df.side = df.side.apply(lambda x: str(x).split(".")[1])
         df.type = df.type.apply(lambda x: str(x).split(".")[1])
 
-        df = column_onehot_encoder(df, ["asset_class","order_class","order_type","status","side","type"])
+        df = column_onehot_encoder(df, ["symbol","asset_class","order_class","order_type","status","side","type"])
         df = df.fillna(value=0)
         # df = column_scaler(df, ["filled_qty", "filled_avg_price"])
 
         df.extended_hours = df.extended_hours.apply(lambda x: int(x))
 
-        def return_dict_by_symbol(df):
-            assets = df.symbol.unique()
-            df_dict = {}
-            for asset in assets:
-                df_dict[asset] = df[df.symbol == asset].to_dict()
-                # print(df_dict[asset], "\n" )
-            return df_dict
+        # def return_dict_by_symbol(df):
+        #     assets = df.symbol.unique()
+        #     df_dict = {}
+        #     for asset in assets:
+        #         df_dict[asset] = df[df.symbol == asset].to_dict()
+        #         # print(df_dict[asset], "\n" )
+        #     return df_dict
 
+        print(df)
         
-        return df, return_dict_by_symbol(df)
+        return df
 
     def run(self):
-        test_stuff = self.get_cur_pos_df()[0]
-        # print(test_stuff)
-        df = self.get_cur_pos_df()[0]
-        # row = df["LINKUSD":"LINKUSD"].
-        # nparr = np.ndarray.astype( row , dtype=np.float64)
-        # print({row : nparr})
-
-        # print(df["LINKUSD":"LINKUSD"].to_numpy().shape)
-
-
-        # print(get_all_obs(test_stuff))
-        def get_all_obs(df):
-            output = {}
-            for asset in df.index:
-                # print(asset)
-                output[asset] = np.ndarray.astype(  df[asset:asset].to_numpy() , dtype=np.float64)
-            return output
-
-        # print(get_all_obs(df))
+        # self.get_all_orders_df()
+        # self.buy_position_at_market("BTCUSD")
+        # self.sell_position_market("BTCUSD")
         pass
         
 

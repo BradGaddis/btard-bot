@@ -4,7 +4,7 @@ from config import *
 import os
 import concurrent.futures
 from trader import trader_agent
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, A2C
 from stable_alpaca import paca_env
 import sys
 from stable_baselines3.common.env_checker import check_env
@@ -13,7 +13,7 @@ import time
 trader = trader_agent()
 env = paca_env(trader)
 # # Instantiate the agent
-model = PPO("MultiInputPolicy", env, verbose=1)
+model = A2C("MultiInputPolicy", env, verbose=0)
 # # Train the agent and display a progress bar
 # # Save the agent
 # model.save("dqn_lunar")
@@ -57,14 +57,20 @@ def load_model(path, env):
 
 def run_model():
     model_counter = 0
+    prediction  = None
     while True:
-        obs = env.reset()
-        print("observation: ",obs)
-        action = model.predict(obs)
-        # print(action)
+        obs = env.reset(prediction)
+        # model.learn(total_timesteps= 1000)
+        # model.learn(total_timesteps=1)
+        # print("observation: ",obs)
+        # time.sleep(5)
+        action = env.action_space.sample()
+        # print("action", action)
         # env.render()
         obs, reward, done, info = env.step(action)
-        # print(reward)
+        # print(info)
+        time.sleep(1)
+        prediction = obs
         if model_counter % 10000 == 0:
             model.save(f"{os.path.join(MODEL_PATH), str(model_counter)}")
         
