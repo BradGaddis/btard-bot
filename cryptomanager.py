@@ -50,10 +50,16 @@ def get_snapshot_info_all():
     print(output)
     return output
 
-def historical_data_df(start = None, end = None, minutes_N = 0 , cryptos = ["BTC/USD"], limit = 0):
+def historical_data_df(start = None, end = None, minutes_N = 0 , days_delta = 0, cryptos = ["BTC/USD"], limit = 0) -> pd.DataFrame:
         # # no keys required for crypto data
         client = CryptoHistoricalDataClient()
         # start = datetime.now() - timedelta(minutes_N)
+
+        if days_delta > 0:
+            start = datetime.strptime( str(datetime.now().date() - timedelta(days=days_delta)),'%Y-%m-%d')
+
+            # start = start.strptime('%Y-%m-%d')
+            print(start)
         
         request_params = CryptoBarsRequest(
                                 symbol_or_symbols=cryptos,
@@ -89,16 +95,25 @@ def get_df(cryptos = None, bars = None, limit = 0):
 
     df = pd.DataFrame(values,columns=keys)
 
-    columns = ["open", "high","low","close","trade_count","volume","vwap"]
+    # columns = ["open", "high","low","close","trade_count","volume","vwap"]
     encode = ["symbol"]
-    df_revised = column_scaler(df, columns)
+    # df_revised = column_scaler(df, columns)
     df_revised = column_encoder(df, encode)
-    df_revised.drop(["timestamp"], inplace=True, axis=1)
+    df_revised = df_revised.rename(columns={"timestamp":"date", "open":"Open", "high":"High","low":"Low","close":"Close","volume":"Volume"})
+
+
+    df_revised.date = df_revised.date.apply(lambda x: x.to_pydatetime())
+
+    # df_revised.set_index("date", inplace=True)
+
+    # df_revised.drop(["date"], inplace=True, axis=1)
+
+    # df_revised.drop(["BTC/USD"], inplace=True, axis=1)
     
-    df_out = df_revised.iloc[-limit:]
+    df_revised = df_revised.iloc[:,0:5]
+    # print(df_out.dtypes)
     if limit > 0:
-        df_out.join(df_revised.iloc[-limit:])
-        return df_out
+        return df_revised.iloc[-limit:]
     else:
         return df_revised
     
@@ -131,3 +146,6 @@ def column_encoder(df , columns):
 #         get_historical_data_df()
 #         prev_min = cur_min
 #     # clear()
+
+
+# print(historical_data_df(days_delta=200))

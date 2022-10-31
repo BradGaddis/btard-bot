@@ -69,7 +69,7 @@ def run_model():
         # env.render()
         obs, reward, done, info = env.step(action)
         # print(info)
-        time.sleep(1)
+        time.sleep(2)
         prediction = obs
         if model_counter % 10000 == 0:
             model.save(f"{os.path.join(MODEL_PATH), str(model_counter)}")

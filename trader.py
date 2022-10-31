@@ -115,7 +115,7 @@ class trader_agent():
     def cancel_all_orders(self):
         self.trading_client.cancel_orders()
 
-    def buy_position_at_market(self, ticker, amt = None, notation_or_qty = "qty"):
+    def buy_position_at_market(self, ticker="BTC/USD", amt = None, notation_or_qty = "qty"):
         
         if not amt:
             amt = self.crypto_gamblin_monty
@@ -137,7 +137,7 @@ class trader_agent():
                     )
         # print(market_order)
 
-    def sell_position_market(self, ticker, amt = 1, notation_or_qty = "qty"):
+    def sell_position_market(self, ticker="BTCUSD", amt = 1, notation_or_qty = "qty"):
         # print(self.positions)
         pos_to_close_id = None
         unrealized_pl = 0
@@ -147,6 +147,8 @@ class trader_agent():
                 print("selling ", ticker)
                 pos_to_close_id = position["asset_id"]
                 unrealized_pl = float(position["unrealized_pl"])
+        if not pos_to_close_id:
+            return
         close = self.trading_client.close_position(pos_to_close_id)
         # print(close)
         return  unrealized_pl

@@ -13,3 +13,5 @@ gym
 stable_baselines3
 tensorboard
 scikit-learn
+gym_anytrading
+finta
