@@ -152,11 +152,11 @@ def get_interesting_stocks(market_cap = 3000000000, restart = False):
             print("attempting to wait it out...",e)
             time.sleep(5)
 
-def load_interesting_stocks(stocks_of_interest):
+def load_interesting_stocks(stocks_of_interest, path= "./data/stocks_of_interest.csv"):
     saved = []
     complete = False
     try:
-        with open('./data/stocks_of_interest.csv', newline='') as csvfile:
+        with open(path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 saved.append(row)
@@ -200,3 +200,19 @@ def interesting_csv_to_df():
 
 # get_interesting_stocks()
 
+def get_info_all():
+    stocks_list = []
+    try:
+        with open(os.path.join(DATA_PATH,"all_tradable_stocks_info.csv"), "r") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                stocks_list.append(row)
+    except Exception:
+        print(Exception)
+
+    stocks_of_interest = []
+    
+    saved, complete = load_interesting_stocks(stocks_of_interest, os.path.join(DATA_PATH,"all_tradable_stocks_info.csv"))
+    
+    if complete:
+        return
