@@ -20,6 +20,19 @@ def get_metrics():
     return metrics[0]
 
 
+# model.load(os.path.join(MODEL_PATH, "2022-01-11-21-49-18.zip") , env = env)
+
+
+
+
+# cur_min = datetime.now().minute
+
+# td = timedelta(seconds= 60 - datetime.now().second) 
+# # while True:
+# print(td.total_seconds())
+#     # if cur_min > prev_min:
+#     #     prev_min = cur_min
+
 def get_tradable_stocks():
     """Returns a list of stocks supported on alpaca, writes a csv file"""
     url = 'https://api.alpaca.markets/v2/assets?asset_class=us_equity'
