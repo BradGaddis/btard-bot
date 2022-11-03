@@ -1,5 +1,9 @@
+from os import write
+from typing import List
 import requests
 import json
+
+from yfinance.utils import get_all_by_isin
 from config import *
 import csv
 import yfinance as yf
@@ -20,7 +24,7 @@ def get_metrics():
     return metrics[0]
 
 
-def get_tradable_stocks():
+def get_tradable_stocks() -> List:
     """Returns a list of stocks supported on alpaca, writes a csv file"""
     url = 'https://api.alpaca.markets/v2/assets?asset_class=us_equity'
     
@@ -202,17 +206,60 @@ def interesting_csv_to_df():
 
 def get_info_all():
     stocks_list = []
+    print("getting stocks list")
     try:
-        with open(os.path.join(DATA_PATH,"all_tradable_stocks_info.csv"), "r") as f:
+        with open(os.path.join(DATA_PATH,"tradable_stocks.csv"), "r") as f:
             reader = csv.reader(f)
             for row in reader:
-                stocks_list.append(row)
+                stocks_list.append(row[0])
     except Exception:
-        print(Exception)
+        # if file doesn't exist, create it
+        stocks_list = get_tradable_stocks()
+    
+    print(stocks_list)
 
-    stocks_of_interest = []
-    
-    saved, complete = load_interesting_stocks(stocks_of_interest, os.path.join(DATA_PATH,"all_tradable_stocks_info.csv"))
-    
-    if complete:
-        return
+    def make_big_dict() -> None: # lol
+        output = []
+        i = 0
+        length = len(stocks_list)
+
+        while i < length:
+            try:
+                info = check_stock_info(stocks_list[i])
+                output.append(info)
+                i += 1
+                print ("\033[A                                                                         \033[A")
+                print(f"stock {i + 1} of {length}")
+            except Exception as e:
+                print(e)
+        
+        def write_csv():
+            # get keys
+            keys = []
+            for item in output:
+                for key in item.keys():
+                    if key not in keys:
+                        keys.append(key)
+            with open(os.path.join(DATA_PATH,"tradable_stocks.csv"), "w") as f:
+                writer = csv.DictWriter(f, fieldnames=keys)
+                writer.writeheader()
+                row = {}
+                for item in output:
+                    for key in keys:
+                        if item[key]:
+                            row.update({key : item[key]})
+                        else:
+                            continue
+                writer.writerow(row)
+       
+        write_csv()
+        
+    make_big_dict()
+
+# get_info_all()
+
+# with open(os.path.join(DATA_PATH, "detailed_info.csv"),"r") as f:
+#     reader = csv.DictReader(f)
+#     for row in reader:
+        # print(row, "\n")
+
