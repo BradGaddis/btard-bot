@@ -48,7 +48,7 @@ class trader_agent():
         # 10% remains in cash for manual buying, should one choose to
         self.total_buying_power = float(self.trading_client.get_account().non_marginable_buying_power)
         self.gamblin_monty = self.total_buying_power * .01 if self.total_buying_power > 1 else 1    # the amount of money to just fuck around with
-        self.crypto_gamblin_monty = self.total_buying_power * .01 if self.total_buying_power > 1 else 1    
+        self.crypto_gamblin_monty = self.total_buying_power * .01 if self.total_buying_power * .01 > 1 else 1    
         self.long_term_invest_amount = (self.total_buying_power - self.gamblin_monty - self.crypto_gamblin_monty) * .9
 
         self.day_trade_allowed = allow_day_trade # false by default
@@ -57,6 +57,7 @@ class trader_agent():
         self.total_positions_allowed = positions_allowed
 
         # self.check_set_gambling_params()
+        print(self.crypto_gamblin_monty)
         
 
     ## ---- ##
