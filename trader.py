@@ -138,23 +138,36 @@ class trader_agent():
                     )
         # print(market_order)
 
-    def sell_position_market(self, ticker="BTC/USD", amt = 1, notation_or_qty = "qty"):
+    def sell_position_market(self, ticker="BTC/USD", amt = 1, ninety_percent = True):
         # print(self.positions)
+        check = None
+        if ninety_percent:
+            for position in self.positions:
+                position = dict(position)
+                if position["symbol"] == ticker:
+                    check = ticker
+                    amt = round(float(position['qty']) * .9, 9)
+        
+        if not check:
+            return
+        print(amt)
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
-                            notional=amt,
+                            qty=amt,
                             side=OrderSide.SELL,
                             time_in_force=TimeInForce.IOC 
                             )
 
-        # Market order
         market_order = self.trading_client.submit_order(
                         order_data=market_order_data
                     )
 
+        print("selling: ", check, amt)
+
     def get_positions(self):
         # for position in self.positions:
         #     print(position)
+
         return self.positions
     
 

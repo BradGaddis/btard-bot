@@ -58,7 +58,7 @@ def historical_data_df(start = None, end = None, minutes_N = 0 , days_delta = 0,
         if days_delta > 0:
             start = datetime.strptime( str(datetime.now().date() - timedelta(days=days_delta)),'%Y-%m-%d')
 
-            print(start)
+            print("start date: " , start)
         
         request_params = CryptoBarsRequest(
                                 symbol_or_symbols=cryptos,
@@ -98,13 +98,11 @@ def get_df(cryptos = None, bars = None, limit = 0):
     encode = ["symbol"]
     # df_revised = column_scaler(df, columns)
     df_revised = column_encoder(df, encode)
-    df_revised = df_revised.rename(columns={"timestamp":"date", "open":"Open", "high":"High","low":"Low","close":"Close","volume":"Volume"})
+    df_revised = df_revised.rename(columns={"timestamp":"Date", "open":"Open", "high":"High","low":"Low","close":"Close","volume":"Volume", "trade_count" : "Trade_Count", "vwap": "VWAP"})
 
-
-    df_revised.date = df_revised.date.apply(lambda x: x.to_pydatetime())
-
+    df_revised.Date = df_revised.Date.apply(lambda x: x.to_pydatetime().strftime("%Y-%m-%d %H:%M"))
     
-    df_revised = df_revised.iloc[:,0:5]
+    df_revised = df_revised.iloc[:,0:-1]
     if limit > 0:
         return df_revised.iloc[-limit:]
     else:
@@ -141,4 +139,4 @@ def column_encoder(df , columns):
 #     # clear()
 
 
-# print(historical_data_df(days_delta=200))
+# print(historical_data_df(days_delta=0))
