@@ -58,7 +58,6 @@ def historical_data_df(start = None, end = None, minutes_N = 0 , days_delta = 0,
         if days_delta > 0:
             start = datetime.strptime( str(datetime.now().date() - timedelta(days=days_delta)),'%Y-%m-%d')
 
-            # start = start.strptime('%Y-%m-%d')
             print(start)
         
         request_params = CryptoBarsRequest(
@@ -104,14 +103,8 @@ def get_df(cryptos = None, bars = None, limit = 0):
 
     df_revised.date = df_revised.date.apply(lambda x: x.to_pydatetime())
 
-    # df_revised.set_index("date", inplace=True)
-
-    # df_revised.drop(["date"], inplace=True, axis=1)
-
-    # df_revised.drop(["BTC/USD"], inplace=True, axis=1)
     
     df_revised = df_revised.iloc[:,0:5]
-    # print(df_out.dtypes)
     if limit > 0:
         return df_revised.iloc[-limit:]
     else:
