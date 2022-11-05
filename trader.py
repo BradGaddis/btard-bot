@@ -26,7 +26,7 @@ from alpaca.trading.enums import OrderSide, OrderStatus
 from alpaca.trading.requests import ClosePositionRequest
 from uuid import UUID
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder
-
+import cryptomanager
 
 from dateutil import parser
 
@@ -138,22 +138,19 @@ class trader_agent():
                     )
         # print(market_order)
 
-    def sell_position_market(self, ticker="BTCUSD", amt = 1, notation_or_qty = "qty"):
+    def sell_position_market(self, ticker="BTC/USD", amt = 1, notation_or_qty = "qty"):
         # print(self.positions)
-        pos_to_close_id = None
-        unrealized_pl = 0
-        for position in self.positions:
-            position = dict(position)
-            if position["symbol"] == ticker:
-                print("selling ", ticker)
-                pos_to_close_id = position["asset_id"]
-                unrealized_pl = float(position["unrealized_pl"])
-        if not pos_to_close_id:
-            return
-        close = self.trading_client.close_position(pos_to_close_id)
-        # print(close)
-        return  unrealized_pl
+        market_order_data = MarketOrderRequest(
+                            symbol=ticker,
+                            notional=amt,
+                            side=OrderSide.SELL,
+                            time_in_force=TimeInForce.IOC 
+                            )
 
+        # Market order
+        market_order = self.trading_client.submit_order(
+                        order_data=market_order_data
+                    )
 
     def get_positions(self):
         # for position in self.positions:
@@ -260,7 +257,9 @@ class trader_agent():
         # self.get_all_orders_df()
         # self.buy_position_at_market("BTCUSD")
         # self.sell_position_market("BTCUSD")
-        pass
+        self.sell_position_market("BTCUSD", amt= 1)
+        # pass
+        
         
 
 

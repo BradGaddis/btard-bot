@@ -5,15 +5,15 @@ import os
 import concurrent.futures
 from trader import trader_agent
 from stable_baselines3 import PPO, A2C
-from stable_alpaca import paca_env
+# from stable_alpaca import paca_env
 import sys
 from stable_baselines3.common.env_checker import check_env
 import time
 
 trader = trader_agent()
-env = paca_env(trader)
-# # Instantiate the agent
-model = A2C("MultiInputPolicy", env, verbose=0)
+# env = paca_env(trader)
+# # # Instantiate the agent
+# model = A2C("MultiInputPolicy", env, verbose=0)
 # # Train the agent and display a progress bar
 # # Save the agent
 # model.save("dqn_lunar")
@@ -41,7 +41,7 @@ model = A2C("MultiInputPolicy", env, verbose=0)
 def main():
     try:
         trader.run()
-        run_model()
+        # run_model()
         # check_env(env)
     except KeyboardInterrupt:
         print('Interrupted. Closing Model')
