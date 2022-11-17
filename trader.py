@@ -16,7 +16,7 @@ import os
 import requests
 import json
 from alpaca.trading.client import TradingClient
-from alpaca.trading.requests import MarketOrderRequest
+from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.trading.models import Calendar
 from alpaca.trading.requests import GetAssetsRequest
@@ -35,6 +35,7 @@ from cryptomanager import historical_data_df
 class trader_agent():
     def __init__(self, key = ALPACA_PAPER_KEY, skey = ALPACA_PAPER_SECRET_KEY, paper = True, positions_allowed = math.inf, allow_day_trade = False) -> None:
         """Trading object: Instanciates to paper account by default, unless specified otherwise."""
+        
         self.trading_client = TradingClient(key, skey)
         
         # this sets up an array of positons that are currently in the account
@@ -47,20 +48,75 @@ class trader_agent():
 
         # 10% remains in cash for manual buying, should one choose to
         self.total_buying_power = float(self.trading_client.get_account().non_marginable_buying_power)
-        self.gamblin_monty = self.total_buying_power * .01 if self.total_buying_power > 1 else 1    # the amount of money to just fuck around with
-        self.crypto_gamblin_monty = self.total_buying_power * .01 if self.total_buying_power * .01 > 1 else 1    
-        self.long_term_invest_amount = (self.total_buying_power - self.gamblin_monty - self.crypto_gamblin_monty) * .9
+        self.initial_balance = self.set_total_balance()
+        self.gamblin_monty = self.set_gramblin_monty()    # the amount of money to just fuck around with
+        self.crypto_gamblin_monty =self.set_crypto_gamblin_monty()   
 
         self.day_trade_allowed = allow_day_trade # false by default
 
         # if set, will not allow the trader to excede this amount of assets in the portfolio
         self.total_positions_allowed = positions_allowed
 
-        # self.check_set_gambling_params()
-        print(self.crypto_gamblin_monty)
-        
+    def set_total_balance(self):
+        """Sets the initial balance of the account"""
+        self.initial_balance = float(self.trading_client.get_account().non_marginable_buying_power)
+        # check if initial_balance.txt exists
+        if os.path.exists(os.path.join(DATA_PATH ,"initial_balance.txt")):
+            # check if balance is greater than the initial balance in the file
+            with open(os.path.join(DATA_PATH ,"initial_balance.txt"), "r") as f:
+                if self.initial_balance > float(f.read()):
+                    # if so, update the file
+                    with open(os.path.join(DATA_PATH ,"initial_balance.txt"), "w") as f:
+                        print("Updating total balance")
+                        f.write(str(self.initial_balance))
+                        return self.initial_balance
+                else:
+                    # if not, return the initial balance in the file
+                    with open(os.path.join(DATA_PATH ,"initial_balance.txt"), "r") as f:
+                        self.initial_balance = float(f.read())
+                        return self.initial_balance                    
+        else:
+            # if not, create the file
+            with open(os.path.join(DATA_PATH ,"initial_balance.txt"), "w") as f:
+                f.write(str(self.initial_balance))
+                return self.initial_balance
 
-    ## ---- ##
+
+
+
+    def set_gramblin_monty(self, amount = None, rewrite = False):
+        # check if gamblin_balance.txt exists
+        def write_path():
+            with open(os.path.join(DATA_PATH ,"gamblin_balance.txt"), "w") as f:
+                self.gamblin_monty = amount if amount else self.initial_balance * .25 if self.initial_balance > 1 else 1
+                f.write(str(self.gamblin_monty))
+                return self.gamblin_monty
+
+        if os.path.exists(os.path.join(DATA_PATH ,"gamblin_balance.txt")):
+            if rewrite:
+                return write_path()
+            with open(os.path.join(DATA_PATH ,"gamblin_balance.txt"), "r") as f:
+                self.gamblin_monty = float(f.read())
+                return self.gamblin_monty
+        else:
+            return write_path()
+
+    def set_crypto_gamblin_monty(self, amount = None, rewrite = False):
+        # check if gamblin_balance.txt exists
+        def write_path():
+            with open(os.path.join(DATA_PATH ,"crypto_gamblin_balance.txt"), "w") as f:
+                self.crypto_gamblin_monty = amount if amount else self.initial_balance * .25 if self.initial_balance > 1 else 1
+                f.write(str(self.crypto_gamblin_monty))
+                return self.crypto_gamblin_monty
+        if os.path.exists(os.path.join(DATA_PATH ,"crypto_gamblin_balance.txt")):
+            if rewrite:
+                return write_path()
+            with open(os.path.join(DATA_PATH ,"crypto_gamblin_balance.txt"), "r") as f:
+                self.crypto_gamblin_monty = float(f.read())
+                return self.crypto_gamblin_monty
+        else:
+            return write_path()
+
 
     def get_cur_pos_df(self):
         """Returns a dataframe of the current positions held in portfolio"""
@@ -102,9 +158,6 @@ class trader_agent():
         else:
             return None
 
-    def cancel_orders(self):
-        self.trading_client.cancel_orders()
-
     # I'm noob and couldn't figure out how to call the damn get_clock() method. Perhaps someone smarter than me can...
     def get_market_time(self):
         r = requests.get(LIVE_END_POINT + "/v2/clock", headers={"APCA-API-KEY-ID": ALPACA_LIVE_KEY, "APCA-API-SECRET-KEY": ALPACA_LIVE_SECRET_KEY})
@@ -112,18 +165,74 @@ class trader_agent():
         new_json = obj.decode('utf8').replace("'", '"')
         data = json.loads(new_json)
         print(data)
+        return data
 
     def cancel_all_orders(self):
         self.trading_client.cancel_orders()
 
+    def get_get_asset_type(self, symbol):
+        """Returns the asset type of the symbol"""
+        return self.trading_client.get_asset(symbol).asset_class
+
+    def prevent_trade(self):
+        # update total buying power
+        self.total_buying_power = self.trading_client.get_account().buying_power
+        # check if available cash is less than gamblin_monty or crypto_gamblin_monty
+        if self.total_buying_power <= self.gamblin_monty or self.total_buying_power <= self.crypto_gamblin_monty:
+            return True
+        return False
+
+    def prevent_day_trade(self, symbol):
+        """Returns True if the market is closed, or if the account is not allowed to day trade under conditions."""
+        if self.get_get_asset_type(symbol) == "crypto":
+            return False
+
+        if self.trading_client.get_clock().is_open == False:
+            print("Market is closed")
+            return True
+        elif self.day_trade_allowed == False:
+            self.positions = self.trading_client.get_all_positions()
+            # check position for symbol
+            if symbol in [pos.symbol for pos in self.positions]:
+                # check if order was today
+                # loop through orders to find symbol
+                orders = self.trading_client.list_orders(status="all")
+                for order in orders:
+                    if order.symbol == symbol:
+                        # check if order was today
+                        if order.submitted_at.date() == datetime.datetime.now().date():
+                            print("Day trade prevented")
+                            return True
+            else:
+                return False
+            return True
+        else:
+            return False
+
     def buy_position_at_market(self, ticker="BTC/USD", amt = None, notation_or_qty = "qty"):
+        """Buys a position at market price"""
+        if self.prevent_trade():
+            return
+
+        if self.prevent_day_trade(ticker):
+            print(f"{ticker} not bought; could be day trade.")
+            return
+
+        self.cancel_all_orders()
         
-        if not amt:
+        self.reset_available_gambling_money(ticker)
+        
+        # check asset type of ticker
+        asset = self.get_get_asset_type(ticker);
+
+        if amt:
+            amt = self.crypto_gamblin_monty
+        elif asset == "us_equity":
+            amt = self.gamblin_monty
+        elif asset == "crypto":
             amt = self.crypto_gamblin_monty
         trade_result = False
 
-        if self.position_count > self.total_positions_allowed: # TODO add logic to env
-            return trade_result
         print("buying ", ticker)
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
@@ -136,66 +245,90 @@ class trader_agent():
         market_order = self.trading_client.submit_order(
                         order_data=market_order_data
                     )
-        # print(market_order)
+        print(market_order)
 
-    def sell_position_market(self, ticker="BTC/USD", amt = 1, notation_or_qty = "qty"):
-        # print(self.positions)
+    def sell_position_limit(self, ticker = "BTCUSD"):
+        if self.prevent_day_trade(ticker):
+            print(f"{ticker} not sold; could be day trade.")
+            return
+        # cancel all orders
+        self.cancel_all_orders()
+        self.reset_available_gambling_money(ticker)
+        check = False
+        amt = 0
+        entry_price = 0
+        for position in self.positions:
+                position = dict(position)
+
+                if position["symbol"] == ticker:
+
+                    check = ticker
+                    entry_price = math.trunc(float(position['cost_basis']))
+                    amt = round(float(position['market_value']),2)
+
+                    print("selling ", ticker, " at ", entry_price, " for ", amt)
+
+        if not check:
+            return
+        limit_order_data = LimitOrderRequest(
+                    symbol=ticker,
+                    limit_price=entry_price,
+                    notional=amt,
+                    side=OrderSide.SELL,
+                    time_in_force=TimeInForce.IOC
+                    )
+        # Limit order
+        limit_order = self.trading_client.submit_order(
+                        order_data=limit_order_data
+                    )
+
+    def reset_available_gambling_money(self, ticker):
+        self.initial_balance = self.set_total_balance()
+        
+        if self.get_get_asset_type(ticker) == "crypto":
+            self.crypto_gamblin_monty = self.set_crypto_gamblin_monty()
+        else:
+            self.gamblin_monty = self.set_gramblin_monty()
+
+    def sell_position_market(self, ticker="BTC/USD", amt = 1, ninety_percent = True):
+        check = None
+        if ninety_percent:
+            for position in self.positions:
+                position = dict(position)
+                if position["symbol"] == ticker:
+                    check = ticker
+                    amt = round(float(position['qty']) * .9, 9)
+        
+        if not check:
+            return
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
-                            notional=amt,
+                            qty=amt,
                             side=OrderSide.SELL,
                             time_in_force=TimeInForce.IOC 
                             )
 
-        # Market order
         market_order = self.trading_client.submit_order(
                         order_data=market_order_data
                     )
 
+        print("selling: ", check, amt)
+
     def get_positions(self):
-        # for position in self.positions:
-        #     print(position)
-        return self.positions
-    
+        return self.trading_client.get_all_positions()
 
-    def get_position():
-        pass
-
-    def find_potential_new_pos(self):
-        pass
 
     def get_position_tickers(self):
         self.position_count = len(self.positions)
         return [asset.symbol for asset in self.positions]
 
-    def check_set_gambling_params(self):
-        #check if params already set
-        if os.path.exists(os.path.join(DATA_PATH ,'portfolio_params.csv')):
-            with open (os.path.join(DATA_PATH,"portfolio_params.csv"), "r") as params_txt:
-                reader = csv.reader(params_txt)
-                for row in reader:
-                    print(row)
 
-            self.gamblin_monty = self.total_buying_power * .01 if self.total_buying_power > 1 else 1    
-            self.crypto_gamblin_monty = 0
-            self.long_term_invest_amount = (self.total_buying_power - self.gamblin_monty) * .9
-        
-        else :
-            # set the params if they don't exist
-            params = ["gamblin_monty","crypto_gameblin_monty","long_term_invest_amount"]
-            with open (os.path.join(DATA_PATH ,"portfolio_params.csv"), "w") as params_txt:
-                writer = csv.DictWriter(params_txt, fieldnames=params)
-                writer.writeheader()
-                writer.writerow(dict({"gamblin_monty": {self.gamblin_monty}}))
-                writer.writerow(dict({"crypto_gameblin_monty": {self.crypto_gamblin_monty}}))
-                writer.writerow(dict({"long_term_invest_amount": {self.long_term_invest_amount}}))
-                
-
+    def get_all_orders(self):
+        return self.trading_client.list_orders()
 
     def get_all_orders_df(self):
         request_params = GetOrdersRequest(
                     status="closed",
-                    # side=OrderSide.SELL
                  )
 
         # orders that satisfy params
@@ -210,7 +343,6 @@ class trader_agent():
             for key in (keys):
                 values[i].append(order[key])
 
-        # print(keys)
 
         df = pd.DataFrame(values, columns=keys)
         
@@ -237,34 +369,18 @@ class trader_agent():
 
         df = column_onehot_encoder(df, ["symbol","asset_class","order_class","order_type","status","side","type"])
         df = df.fillna(value=0)
-        # df = column_scaler(df, ["filled_qty", "filled_avg_price"])
 
         df.extended_hours = df.extended_hours.apply(lambda x: int(x))
-
-        # def return_dict_by_symbol(df):
-        #     assets = df.symbol.unique()
-        #     df_dict = {}
-        #     for asset in assets:
-        #         df_dict[asset] = df[df.symbol == asset].to_dict()
-        #         # print(df_dict[asset], "\n" )
-        #     return df_dict
-
         print(df)
         
         return df
 
     def run(self):
-        # self.get_all_orders_df()
-        # self.buy_position_at_market("BTCUSD")
-        # self.sell_position_market("BTCUSD")
-        self.sell_position_market("BTCUSD", amt= 1)
+        # self.sell_position_limit("BTCUSD")
+        self.set_gramblin_monty()
+        self.set_crypto_gamblin_monty()
         # pass
         
-        
-
-
-
-
 
 def column_onehot_encoder(df_in , columns):
     for column in columns:

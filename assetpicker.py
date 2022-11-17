@@ -5,7 +5,11 @@ import csv
 import yfinance as yf
 import time
 import pandas as pd
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame
+
 
 def get_metrics():
     """Returns a list of criteria to search by"""
@@ -19,19 +23,6 @@ def get_metrics():
         metrics[0][i] = metrics[0][i].strip()
     return metrics[0]
 
-
-# model.load(os.path.join(MODEL_PATH, "2022-01-11-21-49-18.zip") , env = env)
-
-
-
-
-# cur_min = datetime.now().minute
-
-# td = timedelta(seconds= 60 - datetime.now().second) 
-# # while True:
-# print(td.total_seconds())
-#     # if cur_min > prev_min:
-#     #     prev_min = cur_min
 
 def get_tradable_stocks():
     """Returns a list of stocks supported on alpaca, writes a csv file"""
@@ -47,13 +38,11 @@ def get_tradable_stocks():
     with open("./data/tradable_stocks.csv", "w") as f:
         write = csv.writer(f).writerow(output)
     return output
-        
 
 def check_metric_financial(stocks = []):
     pass
 
 def compare_sectors(assets = []):
-
     pass
 
 def check_stock_financial(stock="msft"):
@@ -61,7 +50,6 @@ def check_stock_financial(stock="msft"):
 
 def check_stock_info(stock):
     return yf.Ticker(stock).info
-
 
 def get_interesting_stocks(market_cap = 3000000000, restart = False):
     """Prints a dataframe of stocks worth looking into by some arbitrary metrics. Market Cap < 3b by default"""
@@ -184,12 +172,8 @@ def load_interesting_stocks(stocks_of_interest, path= "./data/stocks_of_interest
         print(e)
     return saved, complete
 
-
-
-
 def show_interesting_stock(stocks_of_interest, stock, cash_to_debt, info):
     print(stock, [(metric, info[metric]) for metric in get_metrics()],("cash to debt",cash_to_debt),"\n",info["longBusinessSummary"], "\n",stocks_of_interest,"\n", len(stocks_of_interest),"\n")
-
 
 def interesting_csv_to_df():
     stocks_list = []
@@ -207,7 +191,6 @@ def interesting_csv_to_df():
 
     return df
 
-# check stocks that have revenue that is growing
 
 # interesting_csv_to_df()
 
@@ -229,3 +212,23 @@ def get_info_all():
     
     if complete:
         return
+
+def historical_data_df(start = None, end = None, minutes_N = 0 , days_delta = 0, stocks = ["SPY"], limit = 0) -> pd.DataFrame():
+    client = StockHistoricalDataClient(ALPACA_LIVE_KEY, ALPACA_LIVE_SECRET_KEY)
+
+    if days_delta > 0:
+        start = datetime.strptime( str(datetime.now().date() - timedelta(days=days_delta)),'%Y-%m-%d')
+
+        print("start date: " , start)
+
+    request_params = StockBarsRequest(
+                            symbol_or_symbols=stocks,
+                            timeframe=TimeFrame.Minute,
+                            start=start,
+                            end=end
+                    )
+
+    bars = client.get_stock_bars(request_params)
+
+    # convert to dataframe
+    return bars.df
