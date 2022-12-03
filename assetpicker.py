@@ -229,6 +229,28 @@ def historical_data_df(start = None, end = None, minutes_N = 0 , days_delta = 0,
                     )
 
     bars = client.get_stock_bars(request_params)
+    df = bars.df
+    
+    df = df.rename(columns={"timestamp":"Date", "open":"Open", "high":"High","low":"Low","close":"Close","volume":"Volume", "trade_count" : "Trade_Count", "vwap": "VWAP"})
+    # df = df.iloc[:,:-1]
+    df.reset_index(inplace=True)
+    df = column_encoder(df, ["symbol"])
+    df = df.rename(columns={"timestamp":"Date", "open":"Open", "high":"High","low":"Low","close":"Close","volume":"Volume", "trade_count" : "Trade_Count", "vwap": "VWAP"})
+
+    df.Date = df.Date.apply(lambda x: x.to_pydatetime().strftime("%Y-%m-%d %H:%M"))
+    df = df.iloc[:,0:-1]
 
     # convert to dataframe
-    return bars.df
+    return df
+
+def column_encoder(df , columns):
+    for column in columns:
+        # Get one hot encoding of columns B
+        one_hot = pd.get_dummies(df[column])
+        # Drop column B as it is now encoded
+        df = df.drop(column,axis = 1)
+        # Join the encoded df
+        df = df.join(one_hot)
+    return df
+
+# print(historical_data_df(days_delta = 1, stocks = ["SPY"]))

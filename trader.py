@@ -57,6 +57,8 @@ class trader_agent():
         # if set, will not allow the trader to excede this amount of assets in the portfolio
         self.total_positions_allowed = positions_allowed
 
+        self.isOpen = self.trading_client.get_clock().is_open
+
     def set_total_balance(self):
         """Sets the initial balance of the account"""
         self.initial_balance = float(self.trading_client.get_account().non_marginable_buying_power)
@@ -176,9 +178,9 @@ class trader_agent():
 
     def prevent_trade(self):
         # update total buying power
-        self.total_buying_power = self.trading_client.get_account().buying_power
+        self.total_buying_power = float(self.trading_client.get_account().buying_power)
         # check if available cash is less than gamblin_monty or crypto_gamblin_monty
-        if self.total_buying_power <= self.gamblin_monty or self.total_buying_power <= self.crypto_gamblin_monty:
+        if self.total_buying_power <= float(self.gamblin_monty) or float(self.total_buying_power) <= float(self.crypto_gamblin_monty):
             return True
         return False
 
@@ -187,6 +189,11 @@ class trader_agent():
         if self.get_get_asset_type(symbol) == "crypto":
             return False
 
+        if float(self.initial_balance) < 25000:
+            self.day_trade_allowed = False
+        else:
+            self.day_trade_allowed = True
+            
         if self.trading_client.get_clock().is_open == False:
             print("Market is closed")
             return True
@@ -194,9 +201,9 @@ class trader_agent():
             self.positions = self.trading_client.get_all_positions()
             # check position for symbol
             if symbol in [pos.symbol for pos in self.positions]:
-                # check if order was today
+                # check if order filled was today
                 # loop through orders to find symbol
-                orders = self.trading_client.list_orders(status="all")
+                orders = self.get_all_orders()
                 for order in orders:
                     if order.symbol == symbol:
                         # check if order was today
@@ -233,12 +240,14 @@ class trader_agent():
             amt = self.crypto_gamblin_monty
         trade_result = False
 
+        timeInFore = TimeInForce.IOC if asset == "crypto" else TimeInForce.DAY
+
         print("buying ", ticker)
         market_order_data = MarketOrderRequest(
                             symbol=ticker,
                             notional=amt,
                             side=OrderSide.BUY,
-                            time_in_force=TimeInForce.IOC 
+                            time_in_force=timeInFore 
                             )
 
         # Market order
@@ -257,6 +266,13 @@ class trader_agent():
         check = False
         amt = 0
         entry_price = 0
+
+        # check asset type of ticker
+        asset = self.get_get_asset_type(ticker);
+
+        timeInFore = TimeInForce.IOC if asset == "crypto" else TimeInForce.DAY
+
+        
         for position in self.positions:
                 position = dict(position)
 
@@ -275,7 +291,7 @@ class trader_agent():
                     limit_price=entry_price,
                     notional=amt,
                     side=OrderSide.SELL,
-                    time_in_force=TimeInForce.IOC
+                    time_in_force=timeInFore
                     )
         # Limit order
         limit_order = self.trading_client.submit_order(
@@ -324,7 +340,10 @@ class trader_agent():
 
 
     def get_all_orders(self):
-        return self.trading_client.list_orders()
+        request_params = GetOrdersRequest(
+                    status="closed",
+                 )
+        return self.trading_client.get_orders(filter=request_params)
 
     def get_all_orders_df(self):
         request_params = GetOrdersRequest(
@@ -376,10 +395,8 @@ class trader_agent():
         return df
 
     def run(self):
-        # self.sell_position_limit("BTCUSD")
-        self.set_gramblin_monty()
-        self.set_crypto_gamblin_monty()
-        # pass
+        print(self.prevent_trade())
+        pass
         
 
 def column_onehot_encoder(df_in , columns):
