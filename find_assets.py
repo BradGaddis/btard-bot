@@ -109,6 +109,7 @@ def check_all_assets(csv_file_path: str = config.DATA_PATH, output_format: str =
     # Create an empty list to store the asset information
     output = []
     # Loop over the assets
+    iter = 1
     for asset in assets:
         # Create a new list for the asset
         asset_list = []
@@ -141,11 +142,17 @@ def check_all_assets(csv_file_path: str = config.DATA_PATH, output_format: str =
                 # Append the dictionary to the output list
                 output.append(asset_dict)
 
-                print(f"Successfully retrieved information for {symbol}.")
+                print(f"Successfully retrieved information for {symbol}. Count: {iter}/{len(assets)}")
+                iter += 1
+                output_df = pd.DataFrame(output)
+                output_df = output_df.fillna(0)
+                output_df.to_csv(os.path.join(csv_file_path, "asset_info." + output_format), index=False)
                 break
             except Exception as e:
-                print(e)
-                continue
+                print(e, "moving on")
+                print(f"Checked {iter}/{len(assets)}")
+                iter += 1
+                break
     
     # Create a Pandas DataFrame from the output list
     output_df = pd.DataFrame(output)
