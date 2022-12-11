@@ -145,6 +145,7 @@ def check_all_assets(csv_file_path: str = config.DATA_PATH, output_format: str =
                 break
             except Exception as e:
                 print(e)
+                continue
     
     # Create a Pandas DataFrame from the output list
     output_df = pd.DataFrame(output)
