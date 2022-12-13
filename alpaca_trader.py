@@ -7,7 +7,7 @@ from alpaca.data.requests import CryptoBarsRequest, StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 from alpaca.trading.enums import OrderSide, OrderStatus, TimeInForce
 from alpaca.data.historical import CryptoHistoricalDataClient, StockHistoricalDataClient
-
+from finta import TA
 class Alpaca_Trader():
     """
     A class to handle all the Alpaca API calls
@@ -83,12 +83,14 @@ class Alpaca_Trader():
         orders = self.trading_client.get_orders(filter=request_params)
         return orders
 
-    def buy(self, asset, amt):
+    def buy(self, asset, amt = None):
         if self.prevent_day_trade(asset):
             return
 
         # check asset type
         asset_type = self.check_asset_type(asset)
+        print(asset_type)
+        print(f"Attempting to buy {asset} at {amt}")
         if asset_type == AssetClass.CRYPTO:
             amt = amt if amt else self.amt_allowed_for_trade_crypto
         else:
@@ -98,7 +100,7 @@ class Alpaca_Trader():
                             symbol=asset,
                             qty=amt,
                             side=OrderSide.BUY,
-                            time_in_force=TimeInForce.FOK
+                            time_in_force=TimeInForce.IOC
                             )
 
         # Market order
@@ -110,8 +112,14 @@ class Alpaca_Trader():
         if self.prevent_day_trade(asset):
             return
         # limit sell for what we bought it at
+        asset_type = self.check_asset_type(asset)
+        if asset_type == AssetClass.CRYPTO:
+            # remove the / from the asset name
+            asset = asset.replace("/", "")
+            print(asset)
         position = None
         qty = None
+        entry_price = None
         for p in self.get_positions():
             if p.symbol == asset:
                 position = p
@@ -121,6 +129,7 @@ class Alpaca_Trader():
             # Get the average entry price of the position
             entry_price = position.avg_entry_price
             qty = position.qty
+            print(f"Position found for {asset}. Qty: {qty} Entry Price: {entry_price}")
 
         print(f"Attempting to sell {asset} at {entry_price}")
         # preparing orders
@@ -129,7 +138,7 @@ class Alpaca_Trader():
                             qty=qty,
                             limit_price = entry_price,
                             side=OrderSide.SELL,
-                            time_in_force=TimeInForce.FOK
+                            time_in_force=TimeInForce.IOC
                             )
 
         # Market order
@@ -137,10 +146,10 @@ class Alpaca_Trader():
                         order_data=market_order_data
                     )
 
-    def get_historical_data_df(self, asset, days_delta = 0, start=None):
+    def get_historical_data_df(self, asset = "BTC/USD", days_delta = 0, start=None):
         if days_delta > 0:
             start = datetime.strptime( str(datetime.now().date() - timedelta(days=days_delta)),'%Y-%m-%d')
-        print("start date:" , "Today" if not start else start)
+        print("start: ", start if start else "Today")
         bars = None
         asset_type = self.check_asset_type(asset)
         if asset_type == AssetClass.CRYPTO:
@@ -170,12 +179,63 @@ class Alpaca_Trader():
         df = df.rename(columns={"timestamp":"Date", "open":"Open", "high":"High","low":"Low","close":"Close","volume":"Volume", "trade_count" : "Trade_Count", "vwap": "VWAP"})
         df = df.drop("symbol", axis=1)
         df.Date = df.Date.apply(lambda x: x.to_pydatetime().strftime("%Y-%m-%d %H:%M"))
+        df = df.drop("Date", axis=1)
         df = df.iloc[:,0:-1]
         
         return df
-            
+
+    def Historical_Add_Technicals_DF(self, df = None, **kwargs):
+        asset = None
+        days_delta = 0
+    
+        if df == None:
+            if "asset" in kwargs:
+                asset = kwargs["asset"]
+                del kwargs["asset"]
+            if "days_delta" in kwargs:
+                days_delta = kwargs["days_delta"]
+                del kwargs["days_delta"]
+            if asset or  days_delta:
+                df = self.get_historical_data_df(asset=asset, days_delta=days_delta)
+
+        # df['OBV'] = TA.OBV(df)
+        df['EMA'] = TA.EMA(df, 200)
+        df['RSI'] = TA.RSI(df)
+        df  = df.join(TA.PIVOT_FIB(df))
+        df = df.join(TA.MACD(df))
+        df.fillna(0, inplace=True)
+        return df
 
         
-alp_trade = Alpaca_Trader()
+    # def Historical_Add_Technicals_DF(self, df = None, **kwargs):
+    #     """
+    #     A method that adds technical indicators to a historical data DataFrame.
 
-print(alp_trade.get_historical_data_df("AAPL", 1))
+    #     :param df: (optional) the DataFrame to add the indicators to. If not provided, will use the default historical data DataFrame.
+    #     :param kwargs: the technical indicators to add. The keywords should be the names of the indicators (e.g. "EMA", "RSI") and the values should be the parameters to pass to the indicator function (e.g. 200 for the EMA with a window of 200).
+    #     :return: the DataFrame with the added technical indicators.
+    #     """
+    #     # Get asset from kwargs
+    #     asset = None
+    #     days_delta = 0
+    
+    #     if df == None:
+    #         if "asset" in kwargs:
+    #             asset = kwargs["asset"]
+    #             del kwargs["asset"]
+    #         if "days_delta" in kwargs:
+    #             days_delta = kwargs["days_delta"]
+    #             del kwargs["days_delta"]
+    #         if not asset or not days_delta:
+    #             df = self.get_historical_data_df(asset=asset, days_delta=days_delta)
+
+    #         df = self.get_historical_data_df()
+            
+    #     # Add each of the technical indicators specified in kwargs
+    #     for indicator, params in kwargs.items():
+    #         df[indicator] = TA.indicator(*params)
+            
+    #     # Fill any missing values with 0 and return the DataFrame
+    #     df.fillna(0, inplace=True)
+    #     return df
+
